@@ -221,9 +221,13 @@ function TransformedIteratorNext() {
   while (true) {
     var nextFn = iterator.next;
     var result = nextFn.apply(iterator, arguments);
-    if (result.done === false) {
-      result = transformer.call(context, result);
+    if (result.done !== false) {
+      O['[[OriginalIterator]]'] = undefined;
+      O['[[TransformFunction]]'] = undefined;
+      O['[[TransformContext]]'] = undefined;
+      return result;
     }
+    result = transformer.call(context, result);
     if (result === undefined || result === null) {
       continue;
     }
@@ -238,6 +242,10 @@ function TransformedIteratorNext() {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
+      var returnFn = iterator.return;
+      if (returnFn !== undefined && IsCallable(returnFn) === true) {
+        returnFn.call(iterator);
+      }
     }
     return result;
   }
