@@ -100,6 +100,18 @@ CreateMethodProperty(Array.prototype, 'values', Array.prototype[Symbol.iterator]
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
+function AbruptCompleteIterator(O) {
+  if (Object(O) !== O) {
+    throw new TypeError();
+  }
+  var returnFn = O.return;
+  if (returnFn !== undefined && IsCallable(returnFn) === true) {
+    return returnFn.call(iterator);
+  }
+}
+
+
 /**
  * A specific `transform` which uses a predicate callbackFn returns true to keep
  * values or false to skip values of this iterator. Returns a new iterator.
@@ -120,7 +132,7 @@ CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , th
   if (arguments.length > 1) {
     thisArg = arguments[1];
   }
-  CreateTransformedIterator(O, filterTransformer, thisArg);
+  return CreateTransformedIterator(O, filterTransformer, thisArg);
 });
 
 /**
@@ -141,7 +153,7 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
   if (arguments.length > 1) {
     thisArg = arguments[1];
   }
-  CreateTransformedIterator(O, mapTransformer, thisArg);
+  return CreateTransformedIterator(O, mapTransformer, thisArg);
 });
 
 /**
@@ -207,7 +219,24 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
   iterator.next = TransformedIteratorNext;
+  var returnFn = iterator.return;
+  if (IsCallable(returnFn)) {
+    iterator.return = TransformedIteratorReturn;
+  }
   return iterator;
+}
+
+function TransformedIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = iterator.return;
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator);
 }
 
 function TransformedIteratorNext() {
@@ -242,10 +271,7 @@ function TransformedIteratorNext() {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
-      var returnFn = iterator.return;
-      if (returnFn !== undefined && IsCallable(returnFn) === true) {
-        returnFn.call(iterator);
-      }
+      AbruptCompleteIterator(iterator);
     }
     return result;
   }
@@ -256,21 +282,37 @@ function TransformedIteratorNext() {
  * returning a new iterator which yields IteratorResults where the value
  * property contains an array tuple of the values of each iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'zip', function (iterable) {
+CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
   var O = Object(this);
-  iterable = Object(iterable);
-  var iterator = GetIterator(iterable);
-  var next = iterator['next'];
-
+  var iterators = [];
+  for (var i = 0; i < arguments.length; i++) {
+    var iterable = Object(arguments[i]);
+    var iterator = GetIterator(iterable);
+    iterators.push(iterator);
+  }
   var zipTransformer = function (result) {
-    var otherResult = next.call(iterator);
-    if (otherResult.done !== false) {
-      return otherResult;
+    var zippedValues = [ result.value ];
+    for (var i = 0; i < iterators.length; i++) {
+      var iterator = iterators[i];
+      var next = iterator.next;
+      if (IsCallable(next) === false) {
+        throw new TypeError();
+      }
+      var otherResult = next.call(iterator);
+      if (otherResult.done !== false) {
+        for (var j = 0; j < iterators.length; j++) {
+          if (j !== i) {
+            iterator = iterators[j];
+            AbruptCompleteIterator(iterator);
+          }
+        }
+        return otherResult;
+      }
+      zippedValues.push(otherResult.value);
     }
-    var zippedValues = [ result.value, otherResult.value ];
     return CreateIterResultObject(zippedValues, false);
   };
-  CreateTransformedIterator(O, zipTransformer, thisArg);
+  return CreateTransformedIterator(O, zipTransformer);
 });
 
 
