@@ -331,12 +331,6 @@ CreateMethodProperty(IteratorPrototype, 'into', function ( collectionType ) {
   return fromIterator.call(collectionType, this);
 });
 
-
-// Fill some gaps.
-
-// var Symbol = function(x){return '@@'+x};
-
-// Symbol.iterator = Symbol('iterator');
 Symbol.fromIterator = Symbol('fromIterator');
 
 CreateMethodProperty(Array, Symbol.fromIterator, function (iterator) {
