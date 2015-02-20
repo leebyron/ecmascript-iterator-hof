@@ -320,8 +320,6 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 
 // TODO: build atop the ReverseIterable protocol
 
-// TODO: return/throw/etc forwarding?
-
 // TODO: Reduced() proposal
 
 // TODO: into should be it's own proposal
