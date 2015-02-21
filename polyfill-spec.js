@@ -3,6 +3,123 @@
 require('./ecmascript-reverse-iterator/polyfill-spec');
 
 
+CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
+  var O = Object(this);
+  if (arguments.length === 0) {
+    return O;
+  }
+  var iterators = new Array(arguments.length + 1);
+  iterators[0] = O;
+  for (var i = 0; i < arguments.length; i++) {
+    var iterable = Object(arguments[i]);
+    if (GetMethod(iterable, Symbol.iterator) === undefined ||
+        IsConcatSpreadable(iterable) === false) {
+      iterable = [iterable];
+    }
+    iterators[i + 1] = GetIterator(iterable);
+  }
+  return CreateConcatIterator(iterators);
+});
+
+function CreateConcatIterator(iterators) {
+  if (Object(iterators) !== iterators) {
+    throw new TypeError();
+  }
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Iterators]]', '[[State]]']
+  );
+  iterator['[[Iterators]]'] = iterators;
+  iterator['[[State]]'] = 0;
+  CreateMethodProperty(iterator, 'next', ConcatIteratorNext);
+  var isReversable = true;
+  for (var i = 0; i < iterators.length; i++) {
+    var iterator = iterators[i];
+    var usingReverseIterator = GetMethod(originalIterator, Symbol.reverseIterator);
+    if (usingReverseIterator === undefined) {
+      isReversable = false;
+      break;
+    }
+  }
+  if (isReversable) {
+    CreateMethodProperty(iterator, Symbol.reverseIterator, ConcatIteratorReverse);
+  }
+  var returnFn = iterator['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
+  }
+  var throwFn = iterator['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', ConcatIteratorThrow);
+  }
+  return iterator;
+}
+
+function ConcatIteratorNext() {
+  // TODO
+  // 1. Let O be ToObject(this value).
+  // 2. ReturnIfAbrupt(O).
+  // 3. Let A be ArraySpeciesCreate(O, 0).
+  // 4. ReturnIfAbrupt(A).
+  // 5. Let n be 0.
+  // 6. Let items be a List whose first element is O and whose subsequent elements are, in left to right order, the arguments that were passed to this function invocation.
+  // 7. Repeat, while items is not empty
+  //   a. Remove the first element from items and let E be the value of the element.
+  //   b. Let spreadable be IsConcatSpreadable(E).
+  //   c. ReturnIfAbrupt(spreadable).
+  //   d. If spreadable is true, then
+  //     i. Let k be 0.
+  //     ii. Let len be ToLength(Get(E, "length")).
+  //     iii. ReturnIfAbrupt(len).
+  //     iv. If n + len > 253-1, throw a TypeError exception.
+  //     v. Repeat, while k < len
+  //       1. Let P be ToString(k).
+  //       2. Let exists be HasProperty(E, P).
+  //       3. ReturnIfAbrupt(exists).
+  //       4. If exists is true, then
+  //         a. Let subElement be Get(E, P).
+  //         b. ReturnIfAbrupt(subElement).
+  //         c. Let status be CreateDataPropertyOrThrow (A, ToString(n), subElement). d. ReturnIfAbrupt(status).
+  //       5. Increase n by 1.
+  //       6. Increase k by 1.
+  //   e. Else E is added as a single item rather than spread,
+  //     i. If n ≥ 253-1, throw a TypeError exception.
+  //     ii. Let status be CreateDataPropertyOrThrow (A, ToString(n), E).
+  //     iii. ReturnIfAbrupt(status).
+  //     iv. Increase n by 1.
+  // 8. Let setStatus be Set(A, "length", n, true).
+  // 9. ReturnIfAbrupt(setStatus).
+  // 10. Return A.
+}
+
+function ConcatIteratorReverse() {
+  var O = Object(this);
+  var state = O['[[state]]'];
+  if (state !== 0) {
+    throw new TypeError();
+  }
+  var iterators = O['[[iterators]]'];
+  if (Object(iterators) !== iterators) {
+    throw new TypeError();
+  }
+  var reverseIterators = new Array(iterators.length);
+  for (var i = 0; i < iterators.length; i++) {
+    var iterator = iterators[i];
+    var usingReverseIterator = GetMethod(iterator, Symbol.reverseIterator);
+    var reverseIterator = GetIterator(iterator, usingReverseIterator);
+    reverseIterators[iterators.length - 1 - i] = reverseIterator;
+  }
+  return CreateConcatIterator(reverseIterators);
+}
+
+function ConcatIteratorReturn(value) {
+  // TODO
+}
+
+function ConcatIteratorThrow(exception) {
+  // TODO
+}
+
 /**
  * Returns true if all items in the list pass the predicate.
  * Consumes the iterable.
@@ -291,7 +408,7 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 });
 
 
-// TODO: concat
+// TODO: move ES6 spec details only used by this spec into this repo
 
 // TODO: Reduced() proposal
 
