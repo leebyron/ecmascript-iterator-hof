@@ -181,14 +181,24 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var mapTransformer = function (result) {
-    var value = IteratorValue(result);
-    var mappedValue = callbackFn.call(this, value);
-    return CreateIterResultObject(mappedValue, false);
-  };
+  var mapContext = ObjectCreate(
+    null,
+    ['[[CallbackFunction]]', '[[CallbackContext]]']
+  );
+  mapContext['[[CallbackFunction]]'] = callbackFn;
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  return CreateTransformedIterator(O, mapTransformer, thisArg);
+  mapContext['[[CallbackContext]]'] = thisArg;
+  return CreateTransformedIterator(O, MappingIteratorTransform, mapContext);
 });
+
+function MappingIteratorTransform(result) {
+  var O = Object(this);
+  var callbackFn = O['[[CallbackFunction]]'];
+  var thisArg = O['[[CallbackContext]]'];
+  var value = IteratorValue(result);
+  var mappedValue = callbackFn.call(thisArg, value);
+  return CreateIterResultObject(mappedValue, false);
+}
 
 /**
  * Reduces this iterator with a reducing callbackFn to a single value.
