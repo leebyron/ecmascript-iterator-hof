@@ -1,104 +1,6 @@
 "use strict";
 
-// 7.2.2
-function IsCallable(argument) {
-  return typeof argument === 'function';
-}
-
-// 7.3.5
-function CreateMethodProperty(O, P, V) {
-  var newDesc = {
-    value: V,
-    writable: true,
-    enumerable: false,
-    configurable: false,
-  };
-  return Object.defineProperty(O, P, newDesc);
-}
-
-// 7.3.7
-function GetMethod(O, P) {
-  // 1. Assert: Type(O) is Object.
-  if (Object(O) !== O) {
-    throw new TypeError();
-  }
-  // 2. Assert: IsPropertyKey(P) is true.
-  // 3. Let func be the result of calling the [[Get]] internal method of O passing P and O as the arguments.
-  // 4. ReturnIfAbrupt(func).
-  var func = O[P];
-  // 5. If func is either undefined or null, then return undefined.
-  if (func === undefined || func === null) {
-    return undefined;
-  }
-  // 6. If IsCallable(func) is false, then throw a TypeError exception.
-  if (IsCallable(func) === false) {
-    throw new TypeError();
-  }
-  // 7. Return func.
-  return func;
-}
-
-// 7.4.2
-function GetIterator(obj, method) {
-  // 1. ReturnIfAbrupt(obj).
-  // 2. If method was not passed, then
-  if (arguments.length < 2) {
-    // a. Let method be GetMethod(obj, @@iterator).
-    // b. ReturnIfAbrupt(method).
-    method = GetMethod(obj, Symbol.iterator);
-  }
-  // 3. If IsCallable(method) is false, then throw a TypeError exception.
-  if (IsCallable(method) === false) {
-    throw new TypeError('method must be callable');
-  }
-  // 4. Let iterator be the result of calling the [[Call]] internal method of
-  //    method with obj as thisArgument and an empty List as argumentsList.
-  var iterator = method.call(obj);
-  // 5. ReturnIfAbrupt(iterator).
-  // 6. If Type(iterator) is not Object, then throw a TypeError exception.
-  if (Object(iterator) !== iterator) {
-    throw new TypeError('method must return an iterator');
-  }
-  // 7. Return iterator.
-  return iterator;
-}
-
-// 7.4.8
-function CreateIterResultObject(value, done) {
-  // 1. Assert: Type(done) is Boolean.
-  // 2. Let obj be ObjectCreate(%ObjectPrototype%).
-  // 3. Perform CreateDataProperty(obj, "value", value).
-  // 4. Perform CreateDataProperty(obj, "done", done).
-  // 5. Return obj.
-  return { value: value, done: done };
-}
-
-// 9.1.13
-function ObjectCreate(proto, internalSlotsList) {
-  var properties = {};
-  if (internalSlotsList) {
-    for (var ii = 0; ii < internalSlotsList.length; ii++) {
-      var name = internalSlotsList[ii];
-      properties[name] = { writable: true, configurable: false, enumerable: false };
-    }
-  }
-  return Object.create(proto, properties);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-var IteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
-
-CreateMethodProperty(IteratorPrototype, Symbol.iterator, function() { return this; });
-CreateMethodProperty(Array.prototype, 'values', Array.prototype[Symbol.iterator]);
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+require('./ecmascript-reverse-iterator/polyfill-spec');
 
 
 function AbruptCompleteIterator(O) {
@@ -243,7 +145,7 @@ function TransformedIteratorNext() {
   var O = Object(this);
   var iterator = O['[[OriginalIterator]]'];
   if (iterator === undefined) {
-    CreateIterResultObject(undefined, true);
+    return CreateIterResultObject(undefined, true);
   }
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
