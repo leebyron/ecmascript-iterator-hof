@@ -3,17 +3,6 @@
 require('./ecmascript-reverse-iterator/polyfill-spec');
 
 
-function AbruptCompleteIterator(O) {
-  if (Object(O) !== O) {
-    throw new TypeError();
-  }
-  var returnFn = GetMethod(O, 'return');
-  if (returnFn !== undefined && IsCallable(returnFn) === true) {
-    return returnFn.call(iterator);
-  }
-}
-
-
 /**
  * A specific `transform` which uses a predicate callbackFn returns true to keep
  * values or false to skip values of this iterator. Returns a new iterator.
@@ -25,15 +14,12 @@ CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , th
     throw new TypeError();
   }
   var filterTransformer = function (result) {
-    var value = result.value;
+    var value = IteratorValue(result);
     if (callbackFn.call(this, value)) {
       return result;
     }
   };
-  var thisArg;
-  if (arguments.length > 1) {
-    thisArg = arguments[1];
-  }
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
   return CreateTransformedIterator(O, filterTransformer, thisArg);
 });
 
@@ -47,14 +33,11 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
     throw new TypeError();
   }
   var mapTransformer = function (result) {
-    var value = result.value;
+    var value = IteratorValue(result);
     var mappedValue = callbackFn.call(this, value);
     return CreateIterResultObject(mappedValue, false);
   };
-  var thisArg;
-  if (arguments.length > 1) {
-    thisArg = arguments[1];
-  }
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
   return CreateTransformedIterator(O, mapTransformer, thisArg);
 });
 
@@ -67,28 +50,24 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , in
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var next = GetMethod(O, 'next');
-  if (IsCallable(next) === false) {
-    throw new TypeError();
-  }
   var reduced;
-  var result;
+  var next;
   if (arguments.length > 1) {
     reduced = arguments[1];
   } else {
-    result = next.call(this);
-    if (result.done) {
+    next = IteratorStep(O);
+    if (next === false) {
       throw new TypeError('Reduce of empty with no initial value.');
     }
-    reduced = result.value;
+    reduced = IteratorValue(next);
   }
 
   while (true) {
-    result = next.call(this);
-    if (result.done !== false) {
+    next = IteratorStep(O);
+    if (next === false) {
       return reduced;
     }
-    var value = result.value;
+    var value = IteratorValue(next);
     reduced = callbackFn(reduced, value);
   }
 });
@@ -125,14 +104,17 @@ CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ 
  */
 CreateMethodProperty(IteratorPrototype, 'transform', function ( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
-  var thisArg;
-  if (arguments.length > 1) {
-    thisArg = arguments[1];
-  }
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
   return CreateTransformedIterator(O, callbackFn, thisArg);
 });
 
 function CreateTransformedIterator(originalIterator, transformer, context) {
+  if (Object(originalIterator) !== originalIterator) {
+    throw new TypeError();
+  }
+  if (IsCallable(transformer) === false) {
+    throw new TypeError();
+  }
   var iterator = ObjectCreate(
     IteratorPrototype,
     ['[[OriginalIterator]]', '[[TransformFunction]]', '[[TransformContext]]']
@@ -165,32 +147,24 @@ function TransformedIteratorNext() {
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
   while (true) {
-    var nextFn = iterator.next;
-    var result = nextFn.apply(iterator, arguments);
-    if (result.done !== false) {
+    var next = IteratorStep(iterator);
+    if (next === false) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
-      return result;
+      return next;
     }
-    result = transformer.call(context, result);
-    if (result === undefined || result === null) {
+    next = transformer.call(context, next);
+    if (next === undefined || next === null) {
       continue;
     }
-    if (Object(result) !== result) {
-      throw new TypeError('Transformer must return Object or undefined.');
-    }
-    if (result.hasOwnProperty('done') === false ||
-        result.hasOwnProperty('value') === false) {
-      throw new TypeError('Transformer must return IteratorResult.');
-    }
-    if (result.done !== false) {
+    if (IteratorComplete(next) === true) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
-      AbruptCompleteIterator(iterator);
+      IteratorClose(iterator, NormalCompletion());
     }
-    return result;
+    return next;
   }
 }
 
@@ -247,24 +221,21 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
     iterators[i] = GetIterator(iterable);
   }
   var zipTransformer = function (result) {
-    var zippedValues = [ result.value ];
+    var zippedValues = new Array(iterators.length + 1);
+    zippedValues[0] = IteratorValue(result);
     for (var i = 0; i < iterators.length; i++) {
       var iterator = iterators[i];
-      var next = GetMethod(iterator, 'next');
-      if (IsCallable(next) === false) {
-        throw new TypeError();
-      }
-      var otherResult = next.call(iterator);
-      if (otherResult.done !== false) {
+      var next = IteratorStep(iterator);
+      if (next === false) {
         for (var j = 0; j < iterators.length; j++) {
           if (j !== i) {
             iterator = iterators[j];
-            AbruptCompleteIterator(iterator);
+            IteratorClose(iterator, NormalCompletion());
           }
         }
         return otherResult;
       }
-      zippedValues.push(otherResult.value);
+      zippedValues[i + 1] = IteratorValue(next);
     }
     return CreateIterResultObject(zippedValues, false);
   };
@@ -289,9 +260,12 @@ Symbol.fromIterator = Symbol('fromIterator');
 
 CreateMethodProperty(Array, Symbol.fromIterator, function (iterator) {
   var array = new this();
-  var result;
-  while (!(stepResult = iterator.next()).done) {
-    array.push(stepResult.value);
+  while (true) {
+    var next = IteratorStep(iterator);
+    if (next === false) {
+      return array;
+    }
+    var value = IteratorValue(next);
+    array.push(value);
   }
-  return array;
 });
