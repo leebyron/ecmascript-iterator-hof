@@ -181,13 +181,11 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var mapContext = ObjectCreate(
-    null,
-    ['[[CallbackFunction]]', '[[CallbackContext]]']
-  );
-  mapContext['[[CallbackFunction]]'] = callbackFn;
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  mapContext['[[CallbackContext]]'] = thisArg;
+  var mapContext = {
+    '[[CallbackFunction]]': callbackFn,
+    '[[CallbackContext]]': thisArg
+  };
   return CreateTransformedIterator(O, MappingIteratorTransform, mapContext);
 });
 
