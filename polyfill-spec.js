@@ -11,15 +11,28 @@ CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
   var iterators = new Array(arguments.length + 1);
   iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
-    var iterable = Object(arguments[i]);
-    if (GetMethod(iterable, Symbol.iterator) === undefined ||
-        IsConcatSpreadable(iterable) === false) {
+    var iterable = arguments[i];
+    if (IsConcatIterable(iterable) === false) {
       iterable = [iterable];
     }
     iterators[i + 1] = GetIterator(iterable);
   }
   return CreateConcatIterator(iterators);
 });
+
+function IsConcatIterable(O) {
+  if (Object(O) !== O) {
+    return false;
+  }
+  if (GetMethod(O, Symbol.iterator) === undefined) {
+    return false;
+  }
+  var spreadable = O[Symbol.isConcatSpreadable];
+  if (spreadable !== undefined) {
+    return ToBoolean(spreadable);
+  }
+  return true;
+}
 
 function CreateConcatIterator(iterators) {
   if (Object(iterators) !== iterators) {
@@ -34,8 +47,8 @@ function CreateConcatIterator(iterators) {
   CreateMethodProperty(iterator, 'next', ConcatIteratorNext);
   var isReversable = true;
   for (var i = 0; i < iterators.length; i++) {
-    var iterator = iterators[i];
-    var usingReverseIterator = GetMethod(originalIterator, Symbol.reverseIterator);
+    var maybeReversable = iterators[i];
+    var usingReverseIterator = GetMethod(maybeReversable, Symbol.reverseIterator);
     if (usingReverseIterator === undefined) {
       isReversable = false;
       break;
@@ -44,61 +57,51 @@ function CreateConcatIterator(iterators) {
   if (isReversable) {
     CreateMethodProperty(iterator, Symbol.reverseIterator, ConcatIteratorReverse);
   }
-  var returnFn = iterator['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
+  var isReturnable = false;
+  for (var i = 0; i < iterators.length; i++) {
+    var maybeReturnable = iterators[i];
+    var usingReturn = GetMethod(maybeReturnable, 'return');
+    if (usingReturn !== undefined) {
+      isReturnable = true;
+      break;
+    }
   }
-  var throwFn = iterator['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', ConcatIteratorThrow);
+  if (isReturnable) {
+    CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
   }
   return iterator;
 }
 
 function ConcatIteratorNext() {
-  // TODO
-  // 1. Let O be ToObject(this value).
-  // 2. ReturnIfAbrupt(O).
-  // 3. Let A be ArraySpeciesCreate(O, 0).
-  // 4. ReturnIfAbrupt(A).
-  // 5. Let n be 0.
-  // 6. Let items be a List whose first element is O and whose subsequent elements are, in left to right order, the arguments that were passed to this function invocation.
-  // 7. Repeat, while items is not empty
-  //   a. Remove the first element from items and let E be the value of the element.
-  //   b. Let spreadable be IsConcatSpreadable(E).
-  //   c. ReturnIfAbrupt(spreadable).
-  //   d. If spreadable is true, then
-  //     i. Let k be 0.
-  //     ii. Let len be ToLength(Get(E, "length")).
-  //     iii. ReturnIfAbrupt(len).
-  //     iv. If n + len > 253-1, throw a TypeError exception.
-  //     v. Repeat, while k < len
-  //       1. Let P be ToString(k).
-  //       2. Let exists be HasProperty(E, P).
-  //       3. ReturnIfAbrupt(exists).
-  //       4. If exists is true, then
-  //         a. Let subElement be Get(E, P).
-  //         b. ReturnIfAbrupt(subElement).
-  //         c. Let status be CreateDataPropertyOrThrow (A, ToString(n), subElement). d. ReturnIfAbrupt(status).
-  //       5. Increase n by 1.
-  //       6. Increase k by 1.
-  //   e. Else E is added as a single item rather than spread,
-  //     i. If n ≥ 253-1, throw a TypeError exception.
-  //     ii. Let status be CreateDataPropertyOrThrow (A, ToString(n), E).
-  //     iii. ReturnIfAbrupt(status).
-  //     iv. Increase n by 1.
-  // 8. Let setStatus be Set(A, "length", n, true).
-  // 9. ReturnIfAbrupt(setStatus).
-  // 10. Return A.
+  var O = Object(this);
+  var iterators = O['[[Iterators]]'];
+  if (iterators === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+  var state = O['[[State]]'];
+  while (true) {
+    var iterator = iterators[state];
+    var next = IteratorNext(iterator);
+    if (IteratorComplete(next) === false) {
+      return next;
+    }
+    state = state + 1;
+    var len = iterators.length;
+    if (state === len) {
+      O['[[Iterators]]'] = undefined;
+      return next;
+    }
+    O['[[State]]'] = state;
+  }
 }
 
 function ConcatIteratorReverse() {
   var O = Object(this);
-  var state = O['[[state]]'];
+  var state = O['[[State]]'];
   if (state !== 0) {
     throw new TypeError();
   }
-  var iterators = O['[[iterators]]'];
+  var iterators = O['[[Iterators]]'];
   if (Object(iterators) !== iterators) {
     throw new TypeError();
   }
@@ -113,11 +116,16 @@ function ConcatIteratorReverse() {
 }
 
 function ConcatIteratorReturn(value) {
-  // TODO
-}
-
-function ConcatIteratorThrow(exception) {
-  // TODO
+  var O = Object(this);
+  var iterators = O['[[Iterators]]'];
+  if (iterators !== undefined) {
+    var state = O['[[State]]'];
+    for (var i = state; i < iterators.length; i++) {
+      var iterator = iterators[i];
+      IteratorClose(O, NormalCompletion());
+    }
+  }
+  return CreateIterResultObject(value, true);
 }
 
 /**

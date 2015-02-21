@@ -84,3 +84,58 @@ require('./polyfill-spec');
   });
   console.log(every2);
 })();
+
+(function () {
+  // iterators can be concatted
+  var a = ['A', 'B', 'C'];
+  var concatted = a.values().concat(a, a.values(), a.values().reverse());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+})();
+
+(function () {
+  // iterators can be concatted and then reversed
+  var a = ['A', 'B', 'C'];
+  var concatted = a.values().concat(a, a.values(), a.values().reverse()).reverse();
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+})();
+
+(function () {
+  // concat respects spreadable
+  var a = ['A', 'B', 'C'];
+  var noSpread = ['D', 'E', 'F'];
+  noSpread[Symbol.isConcatSpreadable] = false;
+  var concatted = a.values().concat('XYZ', noSpread);
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+  console.log(concatted.next());
+})();
