@@ -4,6 +4,30 @@ require('./ecmascript-reverse-iterator/polyfill-spec');
 
 
 /**
+ * Returns true if all items in the list pass the predicate.
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'every', function (callbackFn /*[ , initialValue ]*/) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  while (true) {
+    var next = IteratorStep(O);
+    if (next === false) {
+      return true;
+    }
+    var value = IteratorValue(next);
+    var testResult = ToBoolean(callbackFn.call(T, value));
+    if (testResult === false) {
+      IteratorClose(O, NormalCompletion());
+      return false;
+    }
+  }
+});
+
+/**
  * A specific `transform` which uses a predicate callbackFn returns true to keep
  * values or false to skip values of this iterator. Returns a new iterator.
  * Consumes this iterator.
@@ -85,6 +109,30 @@ CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ 
   var usingReverseIterator = GetMethod(O, Symbol.reverseIterator);
   var reverseIterator = GetIterator(O, usingReverseIterator);
   return reduce.apply(reverseIterator, arguments);
+});
+
+/**
+ * Returns true if any item in the list passes the predicate.
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initialValue ]*/) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  while (true) {
+    var next = IteratorStep(O);
+    if (next === false) {
+      return false;
+    }
+    var value = IteratorValue(next);
+    var testResult = ToBoolean(callbackFn.call(T, value));
+    if (testResult === true) {
+      IteratorClose(O, NormalCompletion());
+      return true;
+    }
+  }
 });
 
 /**
@@ -243,11 +291,11 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 });
 
 
-// TODO: concat, some, every
+// TODO: concat
 
 // TODO: Reduced() proposal
 
-// TODO: into should be it's own proposal
+// TODO: into should be it's own proposal. It should also affect Promise.all
 CreateMethodProperty(IteratorPrototype, 'into', function ( collectionType ) {
   var fromIterator = GetMethod(collectionType, Symbol.fromIterator);
   if (fromIterator === undefined) {

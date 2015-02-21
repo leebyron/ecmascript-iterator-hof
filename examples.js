@@ -53,3 +53,34 @@ require('./polyfill-spec');
   });
   console.log(reduced);
 })();
+
+
+(function () {
+  // Iterators can be use some
+  var some = ['A', 'B', 'C'].values().some(function(x) {
+    console.log('some testing', x);
+    return x === 'B';
+  });
+  console.log(some);
+
+  var some2 = ['A', 'B', 'C'].values().some(function(x) {
+    console.log('some testing', x);
+    return x === 'D';
+  });
+  console.log(some2);
+})();
+
+(function () {
+  // iterators can use every
+  var every = ['A', 'B', 'C'].values().every(function(x) {
+    console.log('every testing', x);
+    return x === 'B';
+  });
+  console.log(every);
+
+  var every2 = ['A', 'B', 'C'].values().every(function(x) {
+    console.log('every testing', x);
+    return x !== 'D';
+  });
+  console.log(every2);
+})();
