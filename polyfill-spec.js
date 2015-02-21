@@ -91,6 +91,21 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , in
 });
 
 /**
+ * Reduces this iterator in reverse order, throws if iterator is not reversable.
+ * Consumes this iterator.
+ */
+CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ , initialValue ]*/ ) {
+  var O = Object(this);
+  var reduce = GetMethod(O, 'reduce');
+  if (IsCallable(reduce) === false) {
+    throw new TypeError();
+  }
+  var usingReverseIterator = GetMethod(O, Symbol.reverseIterator);
+  var reverseIterator = GetIterator(O, usingReverseIterator);
+  return reduce.apply(reverseIterator, arguments);
+});
+
+/**
  * Transforms this iterator into a new iterator by mapping each IteratorResult
  * with the transforming callbackFn. Consumes this iterator.
  *
@@ -235,9 +250,7 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 });
 
 
-// TODO: concat, some, every, reduceRight
-
-// TODO: build atop the ReverseIterable protocol
+// TODO: concat, some, every
 
 // TODO: Reduced() proposal
 

@@ -37,3 +37,19 @@ require('./polyfill-spec');
   console.log(revMapped.next());
   console.log(revMapped.next());
 })();
+
+(function () {
+  // Iterators can be reduced
+  var reduced = ['A', 'B', 'C'].values().reduce(function(x, y) {
+    return x + y;
+  });
+  console.log(reduced);
+})();
+
+(function () {
+  // Reversable iterators can use reduceRight
+  var reduced = ['A', 'B', 'C'].values().reduceRight(function(x, y) {
+    return x + y;
+  });
+  console.log(reduced);
+})();
