@@ -213,7 +213,7 @@ function TransformedIteratorReturn(value) {
   if (IsCallable(returnFn) === false) {
     throw new TypeError();
   }
-  return returnFn.call(iterator);
+  return returnFn.call(iterator, value);
 }
 
 
