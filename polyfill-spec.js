@@ -295,25 +295,26 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 
 // TODO: Reduced() proposal
 
-// TODO: into should be it's own proposal. It should also affect Promise.all
-CreateMethodProperty(IteratorPrototype, 'into', function ( collectionType ) {
-  var fromIterator = GetMethod(collectionType, Symbol.fromIterator);
-  if (fromIterator === undefined) {
-    throw new TypeError('Must provide collection type which accepts Iterator.');
-  }
-  return fromIterator.call(collectionType, this);
-});
+// TODO: into should be it's own FromIterable proposal.
+// It should also affect Promise.all
+// CreateMethodProperty(IteratorPrototype, 'into', function ( collectionType ) {
+//   var fromIterator = GetMethod(collectionType, Symbol.fromIterator);
+//   if (fromIterator === undefined) {
+//     throw new TypeError('Must provide collection type which accepts Iterator.');
+//   }
+//   return fromIterator.call(collectionType, this);
+// });
 
-Symbol.fromIterator = Symbol('fromIterator');
+// Symbol.fromIterator = Symbol('fromIterator');
 
-CreateMethodProperty(Array, Symbol.fromIterator, function (iterator) {
-  var array = new this();
-  while (true) {
-    var next = IteratorStep(iterator);
-    if (next === false) {
-      return array;
-    }
-    var value = IteratorValue(next);
-    array.push(value);
-  }
-});
+// CreateMethodProperty(Array, Symbol.fromIterator, function (iterator) {
+//   var array = new this();
+//   while (true) {
+//     var next = IteratorStep(iterator);
+//     if (next === false) {
+//       return array;
+//     }
+//     var value = IteratorValue(next);
+//     array.push(value);
+//   }
+// });
