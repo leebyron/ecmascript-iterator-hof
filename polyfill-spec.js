@@ -112,14 +112,16 @@ CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ 
  * Transforms this iterator into a new iterator by mapping each IteratorResult
  * with the transforming callbackFn. Consumes this iterator.
  *
- * callbackFn should accept one argument: the IteratorResult returned by this
- * iterator's `next` method. It should return either an IteratorResult or
- * undefined/null.
+ * callbackFn should accept one argument *result*, the IteratorResult returned
+ * by this iterator's `next` method. It should return either an IteratorResult
+ * or undefined/null. This affords a transformer a few outcomes:
  *
- * If callbackFn returns an IteratorResult with done = true, the resulting
- * iterator will stop iteration and callbackFn will not be called again.
+ *  * Yield the original *result* unchanged - simply return *result*
+ *  * Map the original value to a new value - return a new IteratorResult with
+ *    the desired value.
+ *  * Filter out the original value - return undefined or null
+ *  * End iteration early - return IteratorResult where *done* is **true**.
  *
- * If callbackFn returns undefined or null, that IteratorResult will be skipped.
  */
 CreateMethodProperty(IteratorPrototype, 'transform', function ( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
