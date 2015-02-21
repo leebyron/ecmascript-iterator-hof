@@ -7,7 +7,7 @@ function AbruptCompleteIterator(O) {
   if (Object(O) !== O) {
     throw new TypeError();
   }
-  var returnFn = O.return;
+  var returnFn = GetMethod(O, 'return');
   if (returnFn !== undefined && IsCallable(returnFn) === true) {
     return returnFn.call(iterator);
   }
@@ -67,7 +67,10 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , in
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var next = O.next;
+  var next = GetMethod(O, 'next');
+  if (IsCallable(next) === false) {
+    throw new TypeError();
+  }
   var reduced;
   var result;
   if (arguments.length > 1) {
@@ -140,7 +143,7 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   if (IsCallable(reverseIterable) === true) {
     CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
   }
-  var returnFn = iterator.return;
+  var returnFn = iterator['return'];
   if (IsCallable(returnFn) === true) {
     CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
   }
@@ -204,7 +207,7 @@ function TransformedIteratorReturn(value) {
   if (iterator === undefined) {
     return CreateIterResultObject(value, true);
   }
-  var returnFn = iterator.return;
+  var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
     throw new TypeError();
   }
@@ -228,7 +231,7 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
     var zippedValues = [ result.value ];
     for (var i = 0; i < iterators.length; i++) {
       var iterator = iterators[i];
-      var next = iterator.next;
+      var next = GetMethod(iterator, 'next');
       if (IsCallable(next) === false) {
         throw new TypeError();
       }
@@ -256,7 +259,7 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
 
 // TODO: into should be it's own proposal
 CreateMethodProperty(IteratorPrototype, 'into', function ( collectionType ) {
-  var fromIterator = collectionType[Symbol.fromIterator];
+  var fromIterator = GetMethod(collectionType, Symbol.fromIterator);
   if (fromIterator === undefined) {
     throw new TypeError('Must provide collection type which accepts Iterator.');
   }
