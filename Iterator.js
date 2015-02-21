@@ -284,11 +284,10 @@ function TransformedIteratorNext() {
  */
 CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
   var O = Object(this);
-  var iterators = [];
+  var iterators = new Array(arguments.length);
   for (var i = 0; i < arguments.length; i++) {
     var iterable = Object(arguments[i]);
-    var iterator = GetIterator(iterable);
-    iterators.push(iterator);
+    iterators[i] = GetIterator(iterable);
   }
   var zipTransformer = function (result) {
     var zippedValues = [ result.value ];
