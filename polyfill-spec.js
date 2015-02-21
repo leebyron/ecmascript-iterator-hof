@@ -120,25 +120,16 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   iterator['[[OriginalIterator]]'] = originalIterator;
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
-  iterator.next = TransformedIteratorNext;
+  CreateMethodProperty(iterator, 'next', TransformedIteratorNext);
+  var reverseIterable = originalIterator[Symbol.reverseIterator];
+  if (IsCallable(reverseIterable) === true) {
+    CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
+  }
   var returnFn = iterator.return;
-  if (IsCallable(returnFn)) {
-    iterator.return = TransformedIteratorReturn;
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
   }
   return iterator;
-}
-
-function TransformedIteratorReturn(value) {
-  var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
-  if (iterator === undefined) {
-    return CreateIterResultObject(value, true);
-  }
-  var returnFn = iterator.return;
-  if (IsCallable(returnFn) === false) {
-    throw new TypeError();
-  }
-  return returnFn.call(iterator);
 }
 
 function TransformedIteratorNext() {
@@ -178,6 +169,33 @@ function TransformedIteratorNext() {
     return result;
   }
 }
+
+function TransformedIteratorReverse() {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  var usingReverseIterator = iterator[Symbol.reverseIterator];
+  if (usingReverseIterator === undefined) {
+    throw new TypeError('Iterator is not reversable.');
+  }
+  var reverseIterator = GetIterator(iterator, usingReverseIterator);
+  var transformer = O['[[TransformFunction]]'];
+  var context = O['[[TransformContext]]'];
+  return CreateTransformedIterator(reverseIterator, transformer, context);
+}
+
+function TransformedIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = iterator.return;
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator);
+}
+
 
 /**
  * A specific `transform` which "zips" another iterable with this iterator,

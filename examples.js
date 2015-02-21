@@ -25,3 +25,15 @@ require('./polyfill-spec');
   console.log(zipped.next());
   console.log(zipped.next());
 })();
+
+(function () {
+  // Transformed iterators can be reversed
+  var revMapped = ['A', 'B', 'C'].values().map(function (x) {
+    return x + x;
+  }).reverse();
+  console.log(revMapped.next());
+  console.log(revMapped.next());
+  console.log(revMapped.next());
+  console.log(revMapped.next());
+  console.log(revMapped.next());
+})();
