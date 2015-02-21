@@ -149,6 +149,10 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   if (IsCallable(returnFn) === true) {
     CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
   }
+  var throwFn = iterator['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', TransformedIteratorThrow);
+  }
   return iterator;
 }
 
@@ -214,6 +218,19 @@ function TransformedIteratorReturn(value) {
     throw new TypeError();
   }
   return returnFn.call(iterator, value);
+}
+
+function TransformedIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
 }
 
 
