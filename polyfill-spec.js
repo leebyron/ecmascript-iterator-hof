@@ -2,6 +2,27 @@
 
 require('./ecmascript-reverse-iterator/polyfill-spec');
 
+function IsEveryReversable(iterators) {
+  for (var i = 0; i < iterators.length; i++) {
+    var maybeReversable = iterators[i];
+    var usingReverseIterator = GetMethod(maybeReversable, Symbol.reverseIterator);
+    if (usingReverseIterator === undefined) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function IsSomeReturnable(iterators) {
+  for (var i = 0; i < iterators.length; i++) {
+    var maybeReturnable = iterators[i];
+    var usingReturn = GetMethod(maybeReturnable, 'return');
+    if (usingReturn !== undefined) {
+      return true;
+    }
+  }
+  return false;
+}
 
 CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
   var O = Object(this);
@@ -12,7 +33,7 @@ CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
   iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
     var iterable = arguments[i];
-    if (IsConcatIterable(iterable) === false) {
+    if (IsIteratorConcatSpreadable(iterable) === false) {
       iterable = [iterable];
     }
     iterators[i + 1] = GetIterator(iterable);
@@ -20,7 +41,7 @@ CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
   return CreateConcatIterator(iterators);
 });
 
-function IsConcatIterable(O) {
+function IsIteratorConcatSpreadable(O) {
   if (Object(O) !== O) {
     return false;
   }
@@ -45,28 +66,10 @@ function CreateConcatIterator(iterators) {
   iterator['[[Iterators]]'] = iterators;
   iterator['[[State]]'] = 0;
   CreateMethodProperty(iterator, 'next', ConcatIteratorNext);
-  var isReversable = true;
-  for (var i = 0; i < iterators.length; i++) {
-    var maybeReversable = iterators[i];
-    var usingReverseIterator = GetMethod(maybeReversable, Symbol.reverseIterator);
-    if (usingReverseIterator === undefined) {
-      isReversable = false;
-      break;
-    }
-  }
-  if (isReversable) {
+  if (IsEveryReversable(iterators) === true) {
     CreateMethodProperty(iterator, Symbol.reverseIterator, ConcatIteratorReverse);
   }
-  var isReturnable = false;
-  for (var i = 0; i < iterators.length; i++) {
-    var maybeReturnable = iterators[i];
-    var usingReturn = GetMethod(maybeReturnable, 'return');
-    if (usingReturn !== undefined) {
-      isReturnable = true;
-      break;
-    }
-  }
-  if (isReturnable) {
+  if (IsSomeReturnable(iterators) === true) {
     CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
   }
   return iterator;
@@ -426,16 +429,7 @@ function CreateZipIterator(iterators) {
   );
   iterator['[[Iterators]]'] = iterators;
   CreateMethodProperty(iterator, 'next', ZipIteratorNext);
-  var isReturnable = false;
-  for (var i = 0; i < iterators.length; i++) {
-    var maybeReturnable = iterators[i];
-    var usingReturn = GetMethod(maybeReturnable, 'return');
-    if (usingReturn !== undefined) {
-      isReturnable = true;
-      break;
-    }
-  }
-  if (isReturnable) {
+  if (IsSomeReturnable(iterators) === true) {
     CreateMethodProperty(iterator, 'return', ZipIteratorReturn);
   }
   return iterator;
