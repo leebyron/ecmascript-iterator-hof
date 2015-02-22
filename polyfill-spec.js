@@ -527,8 +527,6 @@ function ZipIteratorReturn(value) {
 }
 
 
-// TODO: move ES6 spec details only used by this spec into this repo
-
 // TODO: Reduced() proposal
 
 // TODO: into should be it's own FromIterable proposal.
