@@ -349,7 +349,8 @@ function TransformedIteratorNext() {
     if (next === undefined || next === null) {
       continue;
     }
-    if (IteratorComplete(next) === true) {
+    done = IteratorComplete(next);
+    if (done === true) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
