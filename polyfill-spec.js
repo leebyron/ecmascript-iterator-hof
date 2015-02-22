@@ -216,30 +216,37 @@ function MapIteratorTransform(result) {
  */
 CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , initialValue ]*/ ) {
   var O = Object(this);
-  if (IsCallable(callbackFn) === false) {
+  if (arguments.length > 1) {
+    return ReduceIterator(O, callbackFn, initialValue);
+  }
+  return ReduceIterator(O, callbackFn);
+});
+
+function ReduceIterator(iterator, reducerFn, initialValue) {
+  if (IsCallable(reducerFn) === false) {
     throw new TypeError();
   }
   var reduced;
-  var next;
-  if (arguments.length > 1) {
-    reduced = arguments[1];
+  var result;
+  if (arguments.length > 2) {
+    reduced = initialValue;
   } else {
-    next = IteratorStep(O);
-    if (next === false) {
-      throw new TypeError('Reduce of empty with no initial value.');
+    result = IteratorNext(iterator);
+    if (IteratorComplete(result) === true) {
+      throw new TypeError('Reduce of empty iterator with no initial value.');
     }
-    reduced = IteratorValue(next);
+    reduced = IteratorValue(result);
   }
 
   while (true) {
-    next = IteratorStep(O);
-    if (next === false) {
+    result = IteratorNext(iterator);
+    if (IteratorComplete(result) === true) {
       return reduced;
     }
-    var value = IteratorValue(next);
-    reduced = callbackFn(reduced, value);
+    var value = IteratorValue(result);
+    reduced = reducerFn(reduced, value);
   }
-});
+}
 
 /**
  * Reduces this iterator in reverse order, throws if iterator is not reversable.
@@ -247,13 +254,15 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , in
  */
 CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ , initialValue ]*/ ) {
   var O = Object(this);
-  var reduce = GetMethod(O, 'reduce');
-  if (IsCallable(reduce) === false) {
-    throw new TypeError();
-  }
   var usingReverseIterator = GetMethod(O, Symbol.reverseIterator);
+  if (usingReverseIterator === undefined) {
+    throw new TypeError('Iterator cannot be reduced from the right.');
+  }
   var reverseIterator = GetIterator(O, usingReverseIterator);
-  return reduce.apply(reverseIterator, arguments);
+  if (arguments.length > 1) {
+    return ReduceIterator(reverseIterator, callbackFn, initialValue);
+  }
+  return ReduceIterator(reverseIterator, callbackFn);
 });
 
 /**
