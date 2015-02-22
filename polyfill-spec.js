@@ -337,8 +337,9 @@ function TransformedIteratorNext() {
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
   while (true) {
-    var next = IteratorStep(iterator);
-    if (next === false) {
+    var next = IteratorNext(iterator);
+    var done = IteratorComplete(next);
+    if (done === true) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
