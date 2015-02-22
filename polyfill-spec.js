@@ -4,8 +4,8 @@ require('./ecmascript-reverse-iterator/polyfill-spec');
 
 function IsEveryReversable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
-    var maybeReversable = iterators[i];
-    var usingReverseIterator = GetMethod(maybeReversable, Symbol.reverseIterator);
+    var iterator = iterators[i];
+    var usingReverseIterator = GetMethod(iterator, Symbol.reverseIterator);
     if (usingReverseIterator === undefined) {
       return false;
     }
@@ -15,8 +15,8 @@ function IsEveryReversable(iterators) {
 
 function IsSomeReturnable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
-    var maybeReturnable = iterators[i];
-    var usingReturn = GetMethod(maybeReturnable, 'return');
+    var iterator = iterators[i];
+    var usingReturn = GetMethod(iterator, 'return');
     if (usingReturn !== undefined) {
       return true;
     }
