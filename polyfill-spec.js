@@ -122,7 +122,7 @@ function ConcatIteratorReturn(value) {
     var state = O['[[State]]'];
     for (var i = state; i < iterators.length; i++) {
       var iterator = iterators[i];
-      IteratorClose(O, NormalCompletion());
+      IteratorClose(iterator, NormalCompletion());
     }
   }
   return CreateIterResultObject(value, true);
@@ -401,38 +401,82 @@ function TransformedIteratorThrow(exception) {
 
 
 /**
- * A specific `transform` which "zips" another iterable with this iterator,
- * returning a new iterator which yields IteratorResults where the value
- * property contains an array tuple of the values of each iterator.
+ * "zips" other iterables with this iterator, returning a new iterator which
+ * yields IteratorResults where the value property contains an array tuple of
+ * the values of each iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'zip', function (/* ...iterables */) {
+CreateMethodProperty(IteratorPrototype, 'zip', function (/*...iterables*/) {
   var O = Object(this);
-  var iterators = new Array(arguments.length);
+  var iterators = new Array(arguments.length + 1);
+  iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
     var iterable = Object(arguments[i]);
-    iterators[i] = GetIterator(iterable);
+    iterators[i + 1] = GetIterator(iterable);
   }
-  var zipTransformer = function (result) {
-    var zippedValues = new Array(iterators.length + 1);
-    zippedValues[0] = IteratorValue(result);
+  return CreateZipIterator(O, iterators);
+});
+
+function CreateZipIterator(iterators) {
+  if (Object(iterators) !== iterators) {
+    throw new TypeError();
+  }
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Iterators]]']
+  );
+  iterator['[[Iterators]]'] = iterators;
+  CreateMethodProperty(iterator, 'next', ZipIteratorNext);
+  var isReturnable = false;
+  for (var i = 0; i < iterators.length; i++) {
+    var maybeReturnable = iterators[i];
+    var usingReturn = GetMethod(maybeReturnable, 'return');
+    if (usingReturn !== undefined) {
+      isReturnable = true;
+      break;
+    }
+  }
+  if (isReturnable) {
+    CreateMethodProperty(iterator, 'return', ZipIteratorReturn);
+  }
+  return iterator;
+}
+
+function ZipIteratorNext() {
+  var O = Object(this);
+  var iterators = O['[[Iterators]]'];
+  if (iterators === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+  var zippedValues = new Array(iterators.length);
+  for (var i = 0; i < iterators.length; i++) {
+    var iterator = iterators[i];
+    var result = IteratorNext(iterator);
+    var done = IteratorComplete(result);
+    if (done === true) {
+      for (var j = 0; j < iterators.length; j++) {
+        if (j !== i) {
+          iterator = iterators[j];
+          IteratorClose(iterator, NormalCompletion());
+        }
+      }
+      return result;
+    }
+    zippedValues[i] = IteratorValue(result);
+  }
+  return CreateIterResultObject(zippedValues, false);
+}
+
+function ZipIteratorReturn(value) {
+  var O = Object(this);
+  var iterators = O['[[Iterators]]'];
+  if (iterators !== undefined) {
     for (var i = 0; i < iterators.length; i++) {
       var iterator = iterators[i];
-      var next = IteratorStep(iterator);
-      if (next === false) {
-        for (var j = 0; j < iterators.length; j++) {
-          if (j !== i) {
-            iterator = iterators[j];
-            IteratorClose(iterator, NormalCompletion());
-          }
-        }
-        return otherResult;
-      }
-      zippedValues[i + 1] = IteratorValue(next);
+      IteratorClose(iterator, NormalCompletion());
     }
-    return CreateIterResultObject(zippedValues, false);
-  };
-  return CreateTransformedIterator(O, zipTransformer);
-});
+  }
+  return CreateIterResultObject(value, true);
+}
 
 
 // TODO: move ES6 spec details only used by this spec into this repo
