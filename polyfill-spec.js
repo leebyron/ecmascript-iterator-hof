@@ -170,7 +170,7 @@ CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , th
     '[[CallbackFunction]]': callbackFn,
     '[[CallbackContext]]': thisArg
   };
-  return CreateTransformedIterator(O, FilterIteratorTransform, context);
+  return CreateTransformedIterator(O, FilterIteratorTransform, context, true);
 });
 
 function FilterIteratorTransform(result) {
@@ -198,7 +198,7 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
     '[[CallbackFunction]]': callbackFn,
     '[[CallbackContext]]': thisArg
   };
-  return CreateTransformedIterator(O, MapIteratorTransform, context);
+  return CreateTransformedIterator(O, MapIteratorTransform, context, true);
 });
 
 function MapIteratorTransform(result) {
@@ -307,10 +307,10 @@ CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initi
 CreateMethodProperty(IteratorPrototype, 'transform', function ( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  return CreateTransformedIterator(O, callbackFn, thisArg);
+  return CreateTransformedIterator(O, callbackFn, thisArg, false);
 });
 
-function CreateTransformedIterator(originalIterator, transformer, context) {
+function CreateTransformedIterator(originalIterator, transformer, context, isReversable) {
   if (Object(originalIterator) !== originalIterator) {
     throw new TypeError();
   }
@@ -325,9 +325,11 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
   CreateMethodProperty(iterator, 'next', TransformedIteratorNext);
-  var reverseIterable = originalIterator[Symbol.reverseIterator];
-  if (IsCallable(reverseIterable) === true) {
-    CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
+  if (isReversable) {
+    var reverseIterable = originalIterator[Symbol.reverseIterator];
+    if (IsCallable(reverseIterable) === true) {
+      CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
+    }
   }
   var returnFn = iterator['return'];
   if (IsCallable(returnFn) === true) {
@@ -382,7 +384,7 @@ function TransformedIteratorReverse() {
   var reverseIterator = GetIterator(iterator, usingReverseIterator);
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
-  return CreateTransformedIterator(reverseIterator, transformer, context);
+  return CreateTransformedIterator(reverseIterator, transformer, context, true);
 }
 
 function TransformedIteratorReturn(value) {
