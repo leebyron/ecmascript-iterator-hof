@@ -162,15 +162,24 @@ CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , th
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var filterTransformer = function (result) {
-    var value = IteratorValue(result);
-    if (callbackFn.call(this, value)) {
-      return result;
-    }
-  };
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  return CreateTransformedIterator(O, filterTransformer, thisArg);
+  var context = {
+    '[[CallbackFunction]]': callbackFn,
+    '[[CallbackContext]]': thisArg
+  };
+  return CreateTransformedIterator(O, FilterIteratorTransform, context);
 });
+
+function FilterIteratorTransform(result) {
+  var O = Object(this);
+  var callbackFn = O['[[CallbackFunction]]'];
+  var thisArg = O['[[CallbackContext]]'];
+  var value = IteratorValue(result);
+  if (ToBoolean(callbackFn.call(thisArg, value)) === false) {
+    return undefined;
+  }
+  return result;
+}
 
 /**
  * A specific `transform` which uses a mapper callbackFn to map from original
@@ -182,14 +191,14 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
     throw new TypeError();
   }
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  var mapContext = {
+  var context = {
     '[[CallbackFunction]]': callbackFn,
     '[[CallbackContext]]': thisArg
   };
-  return CreateTransformedIterator(O, MappingIteratorTransform, mapContext);
+  return CreateTransformedIterator(O, MapIteratorTransform, context);
 });
 
-function MappingIteratorTransform(result) {
+function MapIteratorTransform(result) {
   var O = Object(this);
   var callbackFn = O['[[CallbackFunction]]'];
   var thisArg = O['[[CallbackContext]]'];

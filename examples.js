@@ -15,6 +15,18 @@ require('./polyfill-spec');
 })();
 
 (function () {
+  // Iterator can be filtered
+  var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x) {
+    return x.charCodeAt(0) % 2 === 0;
+  });
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+})();
+
+(function () {
   // Iterators can be zipped
   var a1 = ['A', 'B', 'C'];
   var a2 = ['X', 'Y', 'Z'];
