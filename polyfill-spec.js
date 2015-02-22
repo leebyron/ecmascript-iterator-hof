@@ -1,6 +1,7 @@
 "use strict";
 
 require('./ecmascript-reverse-iterator/polyfill-spec');
+require('./es6');
 
 function IsEveryReversable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
@@ -264,6 +265,48 @@ CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ 
   }
   return ReduceIterator(reverseIterator, callbackFn);
 });
+
+/**
+ * Returns a new iterator which represents a slice of this iterator.
+ */
+CreateMethodProperty(IteratorPrototype, 'slice', function (start, end) {
+  var O = Object(this);
+  var relativeStart = ToInteger(start);
+  if (relativeStart < 0) {
+    throw new TypeError('Slice start must not be negative.');
+  }
+  var relativeEnd;
+  if (end === undefined) {
+    relativeEnd = undefined;
+  } else {
+    relativeEnd = ToInteger(end);
+    if (relativeEnd < 0) {
+      throw new TypeError('Slice end must not be negative.');
+    }
+  }
+  var context = {
+    '[[Start]]': relativeStart,
+    '[[End]]': relativeEnd,
+    '[[Count]]': 0
+  };
+  console.log(context);
+  return CreateTransformedIterator(O, SliceIteratorTransform, context, false);
+});
+
+function SliceIteratorTransform(result) {
+  var O = Object(this);
+  var start = O['[[Start]]'];
+  var end = O['[[End]]'];
+  var count = O['[[Count]]'];
+  O['[[Count]]'] = count + 1;
+  if (count < start) {
+    return undefined;
+  }
+  if (end !== undefined && count === end) {
+    return CreateIterResultObject(undefined, true);
+  }
+  return result;
+}
 
 /**
  * Returns true if any item in the list passes the predicate.

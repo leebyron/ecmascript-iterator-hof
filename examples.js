@@ -151,3 +151,24 @@ require('./polyfill-spec');
   console.log(concatted.next());
   console.log(concatted.next());
 })();
+
+(function () {
+  // iterator can be sliced
+  var a = ['A', 'B', 'C', 'D', 'E', 'F'];
+  var sliced = a.values().slice(1, 3);
+  console.log(sliced.next());
+  console.log(sliced.next());
+  console.log(sliced.next());
+  console.log(sliced.next());
+})();
+
+(function () {
+  // slice arguments are optional
+  var a = ['A', 'B', 'C', 'D', 'E', 'F'];
+  var sliced = a.values().slice(3);
+  console.log(sliced.next());
+  console.log(sliced.next());
+  console.log(sliced.next());
+  console.log(sliced.next());
+  console.log(sliced.next());
+})();
