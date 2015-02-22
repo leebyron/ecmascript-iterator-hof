@@ -226,25 +226,25 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
   if (IsCallable(reducerFn) === false) {
     throw new TypeError();
   }
-  var reduced;
+  var accumulator;
   var result;
   if (arguments.length > 2) {
-    reduced = initialValue;
+    accumulator = initialValue;
   } else {
     result = IteratorNext(iterator);
     if (IteratorComplete(result) === true) {
       throw new TypeError('Reduce of empty iterator with no initial value.');
     }
-    reduced = IteratorValue(result);
+    accumulator = IteratorValue(result);
   }
 
   while (true) {
     result = IteratorNext(iterator);
     if (IteratorComplete(result) === true) {
-      return reduced;
+      return accumulator;
     }
     var value = IteratorValue(result);
-    reduced = reducerFn(reduced, value);
+    accumulator = reducerFn(accumulator, value);
   }
 }
 
