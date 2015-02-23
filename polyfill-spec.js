@@ -339,7 +339,7 @@ CreateMethodProperty(IteratorPrototype, 'split', function (amount) {
     amount = ToInteger(amount);
   }
   var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
-  var buffer = { '[[Tail]]': bufferTail };
+  var buffer = { '[[Tail]]': bufferTail, '[[Count]]': amount };
   var iterators = new Array(amount);
   for (var i = 0; i < amount; i++) {
     var iterator = CreateSplitIterator(O, buffer, bufferTail);
@@ -357,13 +357,14 @@ function CreateSplitIterator(originalIterator, buffer, bufferHead) {
   iterator['[[Buffer]]'] = buffer;
   iterator['[[BufferHead]]'] = bufferHead;
   CreateMethodProperty(iterator, 'next', SplitIteratorNext);
+  CreateMethodProperty(iterator, 'return', SplitIteratorReturn);
   return iterator;
 }
 
 function SplitIteratorNext() {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
-  if (iterator === undefined) {
+  var buffer = O['[[Buffer]]'];
+  if (buffer === undefined) {
     return CreateIterResultObject(undefined, true);
   }
   var bufferHead = O['[[BufferHead]]'];
@@ -371,11 +372,11 @@ function SplitIteratorNext() {
   if (result !== undefined) {
     O['[[BufferHead]]'] = bufferHead['[[Next]]'];
   } else {
-    var buffer = O['[[Buffer]]'];
     var bufferTail = buffer['[[Tail]]'];
     if (bufferHead !== bufferTail) {
       throw new TypeError();
     }
+    var iterator = O['[[OriginalIterator]]'];
     result = IteratorNext(iterator);
     bufferHead['[[Value]]'] = result;
     var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
@@ -384,11 +385,29 @@ function SplitIteratorNext() {
     O['[[BufferHead]]'] = bufferTail;
   }
   if (IteratorComplete(result) === true) {
+    buffer['[[Count]]'] = buffer['[[Count]]'] - 1;
     O['[[OriginalIterator]]'] = undefined;
     O['[[Buffer]]'] = undefined;
     O['[[BufferHead]]'] = undefined;
   }
   return result;
+}
+
+function SplitIteratorReturn(value) {
+  var O = Object(this);
+  var buffer = O['[[Buffer]]'];
+  if (buffer !== undefined) {
+    var count = buffer['[[Count]]'];
+    if (count === 1) {
+      var iterator = O['[[OriginalIterator]]'];
+      IteratorClose(iterator);
+    }
+    buffer['[[Count]]'] = count - 1;
+    O['[[OriginalIterator]]'] = undefined;
+    O['[[Buffer]]'] = undefined;
+    O['[[BufferHead]]'] = undefined;
+  }
+  return CreateIterResultObject(value, true);
 }
 
 /**
