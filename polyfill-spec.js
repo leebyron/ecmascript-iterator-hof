@@ -30,7 +30,7 @@ CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
   if (arguments.length === 0) {
     return O;
   }
-  var iterators = new Array(arguments.length + 1);
+  var iterators = Array(arguments.length + 1);
   iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
     var iterable = arguments[i];
@@ -109,7 +109,7 @@ function ConcatIteratorReverse() {
   if (Object(iterators) !== iterators) {
     throw new TypeError();
   }
-  var reverseIterators = new Array(iterators.length);
+  var reverseIterators = Array(iterators.length);
   for (var i = 0; i < iterators.length; i++) {
     var iterator = iterators[i];
     var usingReverseIterator = GetMethod(iterator, Symbol.reverseIterator);
@@ -340,7 +340,7 @@ CreateMethodProperty(IteratorPrototype, 'tee', function (amount) {
   }
   var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
   var buffer = { '[[Tail]]': bufferTail, '[[Count]]': amount };
-  var iterators = new Array(amount);
+  var iterators = Array(amount);
   for (var i = 0; i < amount; i++) {
     var iterator = CreateTeeIterator(O, buffer, bufferTail);
     iterators[i] = iterator;
@@ -542,7 +542,7 @@ function TransformedIteratorThrow(exception) {
  */
 CreateMethodProperty(IteratorPrototype, 'zip', function (/*...iterables*/) {
   var O = Object(this);
-  var iterators = new Array(arguments.length + 1);
+  var iterators = Array(arguments.length + 1);
   iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
     var iterable = Object(arguments[i]);
@@ -573,7 +573,7 @@ function ZipIteratorNext() {
   if (iterators === undefined) {
     return CreateIterResultObject(undefined, true);
   }
-  var zippedValues = new Array(iterators.length);
+  var zippedValues = Array(iterators.length);
   for (var i = 0; i < iterators.length; i++) {
     var iterator = iterators[i];
     var result = IteratorNext(iterator);
