@@ -548,7 +548,7 @@ CreateMethodProperty(IteratorPrototype, 'zip', function (/*...iterables*/) {
     var iterable = Object(arguments[i]);
     iterators[i + 1] = GetIterator(iterable);
   }
-  return CreateZipIterator(O, iterators);
+  return CreateZipIterator(iterators);
 });
 
 function CreateZipIterator(iterators) {
