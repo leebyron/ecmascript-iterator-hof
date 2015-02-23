@@ -143,11 +143,11 @@ CreateMethodProperty(IteratorPrototype, 'every', function (callbackFn /*[ , init
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
   while (true) {
-    var next = IteratorStep(O);
-    if (next === false) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
       return true;
     }
-    var value = IteratorValue(next);
+    var value = IteratorValue(result);
     var testResult = ToBoolean(callbackFn.call(T, value));
     if (testResult === false) {
       IteratorClose(O, NormalCompletion());
@@ -318,11 +318,11 @@ CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initi
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
   while (true) {
-    var next = IteratorStep(O);
-    if (next === false) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
       return false;
     }
-    var value = IteratorValue(next);
+    var value = IteratorValue(result);
     var testResult = ToBoolean(callbackFn.call(T, value));
     if (testResult === true) {
       IteratorClose(O, NormalCompletion());

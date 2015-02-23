@@ -69,22 +69,6 @@ global.IteratorComplete = function IteratorComplete(iterResult) {
   return ToBoolean(iterResult['done']);
 };
 
-// 7.4.5 IteratorStep ( iterator )
-global.IteratorStep = function IteratorStep(iterator) {
-  // 1. Let result be IteratorNext(iterator).
-  var result = IteratorNext(iterator);
-  // 2. ReturnIfAbrupt(result).
-  // 3. Let done be IteratorComplete(result).
-  var done = IteratorComplete(result);
-  // 4. ReturnIfAbrupt(done).
-  // 5. If done is true, return false.
-  if (done === true) {
-    return false;
-  }
-  // 6. Return result.
-  return result;
-};
-
 // 7.4.4 IteratorValue ( iterResult )
 global.IteratorValue = function IteratorValue(iterResult) {
   // 1. Assert: Type(iterResult) is Object.
