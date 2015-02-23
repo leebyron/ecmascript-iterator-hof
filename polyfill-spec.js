@@ -289,7 +289,6 @@ CreateMethodProperty(IteratorPrototype, 'slice', function (start, end) {
     '[[End]]': relativeEnd,
     '[[Count]]': 0
   };
-  console.log(context);
   return CreateTransformedIterator(O, SliceIteratorTransform, context, false);
 });
 
@@ -331,6 +330,66 @@ CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initi
     }
   }
 });
+
+CreateMethodProperty(IteratorPrototype, 'split', function (amount) {
+  var O = Object(this);
+  if (amount === undefined) {
+    amount = 2;
+  } else {
+    amount = ToInteger(amount);
+  }
+  var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
+  var buffer = { '[[Tail]]': bufferTail };
+  var iterators = new Array(amount);
+  for (var i = 0; i < amount; i++) {
+    var iterator = CreateSplitIterator(O, buffer, bufferTail);
+    iterators[i] = iterator;
+  }
+  return iterators;
+});
+
+function CreateSplitIterator(originalIterator, buffer, bufferHead) {
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[OriginalIterator]]', '[[Buffer]]', '[[BufferHead]]']
+  );
+  iterator['[[OriginalIterator]]'] = originalIterator;
+  iterator['[[Buffer]]'] = buffer;
+  iterator['[[BufferHead]]'] = bufferHead;
+  CreateMethodProperty(iterator, 'next', SplitIteratorNext);
+  return iterator;
+}
+
+function SplitIteratorNext() {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+  var bufferHead = O['[[BufferHead]]'];
+  var result = bufferHead['[[Value]]'];
+  if (result !== undefined) {
+    O['[[BufferHead]]'] = bufferHead['[[Next]]'];
+  } else {
+    var buffer = O['[[Buffer]]'];
+    var bufferTail = buffer['[[Tail]]'];
+    if (bufferHead !== bufferTail) {
+      throw new TypeError();
+    }
+    result = IteratorNext(iterator);
+    bufferHead['[[Value]]'] = result;
+    var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
+    bufferHead['[[Next]]'] = bufferTail;
+    buffer['[[Tail]]'] = bufferTail;
+    O['[[BufferHead]]'] = bufferTail;
+  }
+  if (IteratorComplete(result) === true) {
+    O['[[OriginalIterator]]'] = undefined;
+    O['[[Buffer]]'] = undefined;
+    O['[[BufferHead]]'] = undefined;
+  }
+  return result;
+}
 
 /**
  * Transforms this iterator into a new iterator by mapping each IteratorResult
@@ -374,11 +433,11 @@ function CreateTransformedIterator(originalIterator, transformer, context, isRev
       CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
     }
   }
-  var returnFn = iterator['return'];
+  var returnFn = originalIterator['return'];
   if (IsCallable(returnFn) === true) {
     CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
   }
-  var throwFn = iterator['throw'];
+  var throwFn = originalIterator['throw'];
   if (IsCallable(throwFn) === true) {
     CreateMethodProperty(iterator, 'throw', TransformedIteratorThrow);
   }
@@ -499,8 +558,7 @@ function ZipIteratorNext() {
   for (var i = 0; i < iterators.length; i++) {
     var iterator = iterators[i];
     var result = IteratorNext(iterator);
-    var done = IteratorComplete(result);
-    if (done === true) {
+    if (IteratorComplete(result) === true) {
       for (var j = 0; j < iterators.length; j++) {
         if (j !== i) {
           iterator = iterators[j];

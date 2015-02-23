@@ -19,6 +19,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **reduceRight**
  * **slice**
  * **some**
+ * **split**
  * **transform**
  * **zip**
 
@@ -51,6 +52,14 @@ Where *value* is usually the *value* property of an *IteratorResult*.
 
 This is borrowed from Array.prototype, however relies on the **reverse** method
 proposed to be added in [ReverseIterable](https://github.com/leebyron/ecmascript-reverse-iterator). It is almost identical to `iter.reverse().reduce(...)`.
+
+
+#### split
+
+This method returns `n` independent iterators from this iterator by buffering
+the original iterator.
+
+For those familiar with Python's itertools, this is the same as `tee`.
 
 
 #### transform
