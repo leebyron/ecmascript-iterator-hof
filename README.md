@@ -17,6 +17,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **map**
  * **reduce**
  * **reduceRight**
+ * **slice**
  * **some**
  * **transform**
  * **zip**
