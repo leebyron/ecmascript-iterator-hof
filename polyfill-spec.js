@@ -331,7 +331,7 @@ CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initi
   }
 });
 
-CreateMethodProperty(IteratorPrototype, 'split', function (amount) {
+CreateMethodProperty(IteratorPrototype, 'tee', function (amount) {
   var O = Object(this);
   if (amount === undefined) {
     amount = 2;
@@ -342,13 +342,13 @@ CreateMethodProperty(IteratorPrototype, 'split', function (amount) {
   var buffer = { '[[Tail]]': bufferTail, '[[Count]]': amount };
   var iterators = new Array(amount);
   for (var i = 0; i < amount; i++) {
-    var iterator = CreateSplitIterator(O, buffer, bufferTail);
+    var iterator = CreateTeeIterator(O, buffer, bufferTail);
     iterators[i] = iterator;
   }
   return iterators;
 });
 
-function CreateSplitIterator(originalIterator, buffer, bufferHead) {
+function CreateTeeIterator(originalIterator, buffer, bufferHead) {
   var iterator = ObjectCreate(
     IteratorPrototype,
     ['[[OriginalIterator]]', '[[Buffer]]', '[[BufferHead]]']
@@ -356,12 +356,12 @@ function CreateSplitIterator(originalIterator, buffer, bufferHead) {
   iterator['[[OriginalIterator]]'] = originalIterator;
   iterator['[[Buffer]]'] = buffer;
   iterator['[[BufferHead]]'] = bufferHead;
-  CreateMethodProperty(iterator, 'next', SplitIteratorNext);
-  CreateMethodProperty(iterator, 'return', SplitIteratorReturn);
+  CreateMethodProperty(iterator, 'next', TeeIteratorNext);
+  CreateMethodProperty(iterator, 'return', TeeIteratorReturn);
   return iterator;
 }
 
-function SplitIteratorNext() {
+function TeeIteratorNext() {
   var O = Object(this);
   var buffer = O['[[Buffer]]'];
   if (buffer === undefined) {
@@ -393,7 +393,7 @@ function SplitIteratorNext() {
   return result;
 }
 
-function SplitIteratorReturn(value) {
+function TeeIteratorReturn(value) {
   var O = Object(this);
   var buffer = O['[[Buffer]]'];
   if (buffer !== undefined) {
