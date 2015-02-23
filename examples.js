@@ -172,3 +172,17 @@ require('./polyfill-spec');
   console.log(sliced.next());
   console.log(sliced.next());
 })();
+
+(function () {
+  // tee returns two independent iterators
+  var a = ['A', 'B', 'C'];
+  var tees = a.values().tee();
+  var t1 = tees[0];
+  var t2 = tees[1];
+  var zipped = t1.zip(t2.map(function (x) { return x + x; }));
+  console.log(zipped.next());
+  console.log(zipped.next());
+  console.log(zipped.next());
+  console.log(zipped.next());
+  console.log(zipped.next());
+})();
