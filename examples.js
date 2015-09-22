@@ -173,3 +173,24 @@ require('./polyfill-spec');
   console.log(zipped.next());
   console.log(zipped.next());
 })();
+
+(function () {
+  // user-land iterators can use the adaptor to get IteratorPrototype
+  var iterable = {};
+  iterable[Symbol.iterator] = function() {
+    var i = 0;
+    return {
+      next: function() {
+        return { value: 'Hello' + (++i), done: false };
+      }
+    };
+  };
+
+  var mapped = Iterator(iterable).map(function (x) { return x + x; });
+
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+})();

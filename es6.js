@@ -53,7 +53,7 @@ global.CreateMethodProperty = function CreateMethodProperty(O, P, V) {
   });
 };
 
-// 7.3.7
+// 7.3.9
 global.GetMethod = function GetMethod(O, P) {
   // 1. Assert: Type(O) is Object.
   if (Object(O) !== O) {

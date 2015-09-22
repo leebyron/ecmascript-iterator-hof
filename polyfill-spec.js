@@ -2,6 +2,89 @@
 
 require('./es6');
 
+global.Iterator = function Iterator(iterable) {
+  var iterator = GetIterator(iterable);
+  if (iterator instanceof Iterator) {
+    return iterator;
+  }
+  return CreateAdaptedIterator(iterator);
+};
+
+Object.defineProperty(IteratorPrototype, 'constructor', {
+  value: Iterator,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+Object.defineProperty(Iterator, 'prototype', {
+  value: IteratorPrototype,
+  writable: true,
+  enumerable: false,
+  configurable: false
+});
+
+function CreateAdaptedIterator(originalIterator) {
+  if (Object(originalIterator) !== originalIterator) {
+    throw new TypeError();
+  }
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[OriginalIterator]]']
+  );
+  iterator['[[OriginalIterator]]'] = originalIterator;
+  CreateMethodProperty(iterator, 'next', AdaptedIteratorNext);
+  var returnFn = originalIterator['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', AdaptedIteratorReturn);
+  }
+  var throwFn = originalIterator['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', AdaptedIteratorThrow);
+  }
+  return iterator;
+}
+
+function AdaptedIteratorNext(/*[ value ]*/) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+  if (arguments.length > 0) {
+    var value = arguments[0];
+    return IteratorNext(iterator, value);
+  } else {
+    return IteratorNext(iterator);
+  }
+}
+
+function AdaptedIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator, value);
+}
+
+function AdaptedIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
+}
+
 function IsSomeReturnable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
     var iterator = iterators[i];
@@ -483,6 +566,7 @@ function TransformedIteratorNext(/*[ value ]*/) {
   var context = O['[[TransformContext]]'];
   var result;
   if (arguments.length > 0) {
+    var value = arguments[0];
     result = IteratorNext(iterator, value);
   } else {
     result = IteratorNext(iterator);
