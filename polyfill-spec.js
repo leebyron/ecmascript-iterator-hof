@@ -151,6 +151,74 @@ function FilterIteratorTransform(result) {
 }
 
 /**
+ * Flattens an iterator of (concat-spreadable) iterables, returning an iterator
+ * of flattened values. Accepts a maximum depth to flatten to, which must be >0
+ * and defaults to +Infinity.
+ */
+CreateMethodProperty(IteratorPrototype, 'flatten', function ( /* [ depth ] */ ) {
+  var O = Object(this);
+  var depth;
+  if (arguments.length === 0) {
+    depth = Infinity;
+  } else {
+    depth = ToInteger(arguments[0]);
+    if (depth === 0) {
+      depth = Infinity;
+    }
+  }
+  return CreateFlattenIterator(O, depth);
+});
+
+function CreateFlattenIterator(originalIterator, depth) {
+  if (Object(originalIterator) !== originalIterator) {
+    throw new TypeError();
+  }
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Depth]]', '[[IteratorStack]]']
+  );
+  iterator['[[Depth]]'] = depth;
+  iterator['[[IteratorStack]]'] = [ originalIterator ];
+  CreateMethodProperty(iterator, 'next', FlattenIteratorNext);
+  CreateMethodProperty(iterator, 'return', FlattenIteratorReturn);
+  return iterator;
+}
+
+function FlattenIteratorNext() {
+  var O = Object(this);
+  var depth = O['[[Depth]]'];
+  var stack = O['[[IteratorStack]]'];
+  while (stack.length) {
+    var currentIterator = stack[stack.length - 1];
+    var result = IteratorNext(currentIterator);
+    if (IteratorComplete(result) === true) {
+      stack.pop();
+      continue;
+    }
+    if (stack.length <= depth) {
+      var value = IteratorValue(result);
+      if (IsIteratorConcatSpreadable(value) === true) {
+        var nextIterator = GetIterator(value);
+        stack.push(nextIterator);
+        continue;
+      }
+    }
+    return result;
+  }
+  return CreateIterResultObject(undefined, true);
+}
+
+function FlattenIteratorReturn(value) {
+  var O = Object(this);
+  var stack = O['[[IteratorStack]]'];
+  while (stack.length !== 0) {
+    var iterator = stack.pop();
+    IteratorClose(iterator, NormalCompletion());
+  }
+  return CreateIterResultObject(value, true);
+}
+
+/**
  * A specific `transform` which uses a mapper callbackFn to map from original
  * values to new values. Returns a new iterator. Consumes this iterator.
  */

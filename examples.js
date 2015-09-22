@@ -77,6 +77,34 @@ require('./polyfill-spec');
 })();
 
 (function () {
+  // Iterator can be flattened
+  var flattened = [['A'], [['B']], ['C']].values().flatten();
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+})();
+
+(function () {
+  // Iterator can be "flat mapped" via composition
+  var flattened = ['A', 'B', 'C'].values().map(function (v) {
+    return [ v, v.toLowerCase(), [v] ];
+  }).flatten(1);
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+  console.log(flattened.next());
+})();
+
+(function () {
   // iterators can be concatted
   var a = ['A', 'B', 'C'];
   var concatted = a.values().concat(a, a.values(), a.values());

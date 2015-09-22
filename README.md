@@ -14,6 +14,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **concat**
  * **every**
  * **filter**
+ * **flatten**
  * **map**
  * **reduce**
  * **slice**
