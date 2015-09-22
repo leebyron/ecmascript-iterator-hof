@@ -463,7 +463,7 @@ function CreateTransformedIterator(originalIterator, transformer, context, isRev
   return iterator;
 }
 
-function TransformedIteratorNext() {
+function TransformedIteratorNext(/*[ value ]*/) {
   var O = Object(this);
   var iterator = O['[[OriginalIterator]]'];
   if (iterator === undefined) {
@@ -471,27 +471,31 @@ function TransformedIteratorNext() {
   }
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
+  var result;
+  if (arguments.length > 0) {
+    result = IteratorNext(iterator, value);
+  } else {
+    result = IteratorNext(iterator);
+  }
   while (true) {
-    var next = IteratorNext(iterator);
-    var done = IteratorComplete(next);
-    if (done === true) {
+    if (IteratorComplete(result) === true) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
-      return next;
+      return result;
     }
-    next = transformer.call(context, next);
-    if (next === undefined || next === null) {
+    result = transformer.call(context, result);
+    if (result === undefined || result === null) {
+      result = IteratorNext(iterator);
       continue;
     }
-    done = IteratorComplete(next);
-    if (done === true) {
+    if (IteratorComplete(result) === true) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
       IteratorClose(iterator, NormalCompletion());
     }
-    return next;
+    return result;
   }
 }
 
