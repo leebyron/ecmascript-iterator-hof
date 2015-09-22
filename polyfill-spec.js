@@ -264,6 +264,7 @@ function CreateFlattenIterator(originalIterator, depth) {
   iterator['[[IteratorStack]]'] = [ originalIterator ];
   CreateMethodProperty(iterator, 'next', FlattenIteratorNext);
   CreateMethodProperty(iterator, 'return', FlattenIteratorReturn);
+  CreateMethodProperty(iterator, 'throw', FlattenIteratorThrow);
   return iterator;
 }
 
@@ -299,6 +300,29 @@ function FlattenIteratorReturn(value) {
     IteratorClose(iterator, NormalCompletion());
   }
   return CreateIterResultObject(value, true);
+}
+
+function FlattenIteratorThrow(exception) {
+  var O = Object(this);
+  var stack = O['[[IteratorStack]]'];
+  while (stack.length !== 0) {
+    var iterator = stack.pop();
+    var throwFn = GetMethod(iterator, 'throw');
+    if (throwFn !== undefined) {
+      var result = throwFn.call(iterator, exception);
+      var done = IteratorComplete(innerResult);
+      if (done === true) {
+        var value = IteratorValue(innerResult);
+        // Return Completion{[[type]]: return , [[value]]:value, [[target]]:empty}.
+        return value;
+      }
+    } else {
+      IteratorClose(iterator, NormalCompletion());
+    }
+  }
+  // NOTE: The next step throws a TypeError to indicate that there was a
+  // protocol violation: iterator does not have a throw method.
+  throw new TypeError();
 }
 
 /**
