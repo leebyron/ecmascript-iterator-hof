@@ -194,3 +194,31 @@ require('./polyfill-spec');
   console.log(mapped.next());
   console.log(mapped.next());
 })();
+
+(function () {
+  // GENERATORS
+  function* fib() {
+    var i = 1;
+    var j = 1;
+    try {
+      while (true) {
+        var k = j;
+        j = i + j;
+        i = k;
+        yield i;
+      }
+    } catch (e) {
+      console.log('caught', e);
+      return 'done';
+    }
+  }
+
+  var mapped = fib().map(function (x) { return 'fib:' + x; });
+
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.next());
+  console.log(mapped.throw(new Error('wat')));
+})();
