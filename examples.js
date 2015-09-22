@@ -39,33 +39,12 @@ require('./polyfill-spec');
 })();
 
 (function () {
-  // Transformed iterators can be reversed
-  var revMapped = ['A', 'B', 'C'].values().map(function (x) {
-    return x + x;
-  }).reverse();
-  console.log(revMapped.next());
-  console.log(revMapped.next());
-  console.log(revMapped.next());
-  console.log(revMapped.next());
-  console.log(revMapped.next());
-})();
-
-(function () {
   // Iterators can be reduced
   var reduced = ['A', 'B', 'C'].values().reduce(function(x, y) {
     return x + y;
   });
   console.log(reduced);
 })();
-
-(function () {
-  // Reversable iterators can use reduceRight
-  var reduced = ['A', 'B', 'C'].values().reduceRight(function(x, y) {
-    return x + y;
-  });
-  console.log(reduced);
-})();
-
 
 (function () {
   // Iterators can be use some
@@ -100,27 +79,7 @@ require('./polyfill-spec');
 (function () {
   // iterators can be concatted
   var a = ['A', 'B', 'C'];
-  var concatted = a.values().concat(a, a.values(), a.values().reverse());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-})();
-
-(function () {
-  // iterators can be concatted and then reversed
-  var a = ['A', 'B', 'C'];
-  var concatted = a.values().concat(a, a.values(), a.values().reverse()).reverse();
+  var concatted = a.values().concat(a, a.values(), a.values());
   console.log(concatted.next());
   console.log(concatted.next());
   console.log(concatted.next());

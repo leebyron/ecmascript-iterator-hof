@@ -16,7 +16,6 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **filter**
  * **map**
  * **reduce**
- * **reduceRight**
  * **slice**
  * **some**
  * **tee**
@@ -48,10 +47,10 @@ function (value) {...}
 Where *value* is usually the *value* property of an *IteratorResult*.
 
 
-#### reduceRight
+#### No <del>reduceRight</del>
 
-This is borrowed from Array.prototype, however relies on the **reverse** method
-proposed to be added in [ReverseIterable](https://github.com/leebyron/ecmascript-reverse-iterator). It is almost identical to `iter.reverse().reduce(...)`.
+While Array.prototype contains this method, it requires iterating from the
+right, which is not something Iterators can do, so it is omitted.
 
 
 #### tee
@@ -68,7 +67,7 @@ This method is the common basis for operations which return a new iterator.
 *map*, *filter*, and *zip* are defined in terms of it. It allows for
 simultaneous mapping and filtering as well as ending iteration early.
 
-The iterators it returns allow for chaining of the **reverse**, **return**, and
+The iterators it returns allow for chaining of the **return**, and
 **throw** methods.
 
 
@@ -89,8 +88,6 @@ var map = new Map(keys.values().zip(vals));
 ## Testing:
 
 ```
-git submodule init
-git submodule update
 node examples.js
 ```
 

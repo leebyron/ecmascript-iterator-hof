@@ -1,18 +1,6 @@
 "use strict";
 
-require('./ecmascript-reverse-iterator/polyfill-spec');
 require('./es6');
-
-function IsEveryReversable(iterators) {
-  for (var i = 0; i < iterators.length; i++) {
-    var iterator = iterators[i];
-    var usingReverseIterator = GetMethod(iterator, Symbol.reverseIterator);
-    if (usingReverseIterator === undefined) {
-      return false;
-    }
-  }
-  return true;
-}
 
 function IsSomeReturnable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
@@ -67,9 +55,6 @@ function CreateConcatIterator(iterators) {
   iterator['[[Iterators]]'] = iterators;
   iterator['[[State]]'] = 0;
   CreateMethodProperty(iterator, 'next', ConcatIteratorNext);
-  if (IsEveryReversable(iterators) === true) {
-    CreateMethodProperty(iterator, Symbol.reverseIterator, ConcatIteratorReverse);
-  }
   if (IsSomeReturnable(iterators) === true) {
     CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
   }
@@ -97,26 +82,6 @@ function ConcatIteratorNext() {
     }
     O['[[State]]'] = state;
   }
-}
-
-function ConcatIteratorReverse() {
-  var O = Object(this);
-  var state = O['[[State]]'];
-  if (state !== 0) {
-    throw new TypeError();
-  }
-  var iterators = O['[[Iterators]]'];
-  if (Object(iterators) !== iterators) {
-    throw new TypeError();
-  }
-  var reverseIterators = Array(iterators.length);
-  for (var i = 0; i < iterators.length; i++) {
-    var iterator = iterators[i];
-    var usingReverseIterator = GetMethod(iterator, Symbol.reverseIterator);
-    var reverseIterator = GetIterator(iterator, usingReverseIterator);
-    reverseIterators[iterators.length - 1 - i] = reverseIterator;
-  }
-  return CreateConcatIterator(reverseIterators);
 }
 
 function ConcatIteratorReturn(value) {
@@ -171,7 +136,7 @@ CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , th
     '[[CallbackFunction]]': callbackFn,
     '[[CallbackContext]]': thisArg
   };
-  return CreateTransformedIterator(O, FilterIteratorTransform, context, true);
+  return CreateTransformedIterator(O, FilterIteratorTransform, context);
 });
 
 function FilterIteratorTransform(result) {
@@ -199,7 +164,7 @@ CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisA
     '[[CallbackFunction]]': callbackFn,
     '[[CallbackContext]]': thisArg
   };
-  return CreateTransformedIterator(O, MapIteratorTransform, context, true);
+  return CreateTransformedIterator(O, MapIteratorTransform, context);
 });
 
 function MapIteratorTransform(result) {
@@ -250,23 +215,6 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
 }
 
 /**
- * Reduces this iterator in reverse order, throws if iterator is not reversable.
- * Consumes this iterator.
- */
-CreateMethodProperty(IteratorPrototype, 'reduceRight', function (callbackFn /*[ , initialValue ]*/ ) {
-  var O = Object(this);
-  var usingReverseIterator = GetMethod(O, Symbol.reverseIterator);
-  if (usingReverseIterator === undefined) {
-    throw new TypeError('Iterator cannot be reduced from the right.');
-  }
-  var reverseIterator = GetIterator(O, usingReverseIterator);
-  if (arguments.length > 1) {
-    return ReduceIterator(reverseIterator, callbackFn, initialValue);
-  }
-  return ReduceIterator(reverseIterator, callbackFn);
-});
-
-/**
  * Returns a new iterator which represents a slice of this iterator.
  */
 CreateMethodProperty(IteratorPrototype, 'slice', function (start, end) {
@@ -289,7 +237,7 @@ CreateMethodProperty(IteratorPrototype, 'slice', function (start, end) {
     '[[End]]': relativeEnd,
     '[[Count]]': 0
   };
-  return CreateTransformedIterator(O, SliceIteratorTransform, context, false);
+  return CreateTransformedIterator(O, SliceIteratorTransform, context);
 });
 
 function SliceIteratorTransform(result) {
@@ -400,7 +348,7 @@ function TeeIteratorReturn(value) {
     var count = buffer['[[Count]]'];
     if (count === 1) {
       var iterator = O['[[OriginalIterator]]'];
-      IteratorClose(iterator);
+      IteratorClose(iterator); // TODO note why no completion record?
     }
     buffer['[[Count]]'] = count - 1;
     O['[[OriginalIterator]]'] = undefined;
@@ -428,10 +376,10 @@ function TeeIteratorReturn(value) {
 CreateMethodProperty(IteratorPrototype, 'transform', function ( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  return CreateTransformedIterator(O, callbackFn, thisArg, false);
+  return CreateTransformedIterator(O, callbackFn, thisArg);
 });
 
-function CreateTransformedIterator(originalIterator, transformer, context, isReversable) {
+function CreateTransformedIterator(originalIterator, transformer, context) {
   if (Object(originalIterator) !== originalIterator) {
     throw new TypeError();
   }
@@ -446,12 +394,6 @@ function CreateTransformedIterator(originalIterator, transformer, context, isRev
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
   CreateMethodProperty(iterator, 'next', TransformedIteratorNext);
-  if (isReversable) {
-    var reverseIterable = originalIterator[Symbol.reverseIterator];
-    if (IsCallable(reverseIterable) === true) {
-      CreateMethodProperty(iterator, Symbol.reverseIterator, TransformedIteratorReverse);
-    }
-  }
   var returnFn = originalIterator['return'];
   if (IsCallable(returnFn) === true) {
     CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
@@ -497,19 +439,6 @@ function TransformedIteratorNext(/*[ value ]*/) {
     }
     return result;
   }
-}
-
-function TransformedIteratorReverse() {
-  var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
-  var usingReverseIterator = iterator[Symbol.reverseIterator];
-  if (usingReverseIterator === undefined) {
-    throw new TypeError('Iterator is not reversable.');
-  }
-  var reverseIterator = GetIterator(iterator, usingReverseIterator);
-  var transformer = O['[[TransformFunction]]'];
-  var context = O['[[TransformContext]]'];
-  return CreateTransformedIterator(reverseIterator, transformer, context, true);
 }
 
 function TransformedIteratorReturn(value) {
