@@ -222,3 +222,35 @@ require('./polyfill-spec');
   console.log(mapped.next());
   console.log(mapped.throw(new Error('wat')));
 })();
+
+(function () {
+  // Transform can be used to build interesting things:
+
+  function reductions(iterable, reducer, initial) {
+    var accum;
+    var needsInitial = false;
+    if (arguments.length >= 3) {
+      accum = initial;
+    } else {
+      needsInitial = true;
+    }
+    return Iterator(iterable).transform(function (result) {
+      if (needsInitial) {
+        needsInitial = false;
+        accum = result.value;
+        return result;
+      } else {
+        accum = reducer(accum, result.value);
+        return { value: accum , done: false };
+      }
+    });
+  }
+
+  var iter = reductions([1,2,3,4], (a, v) => a + v);
+  console.log(iter.next());
+  console.log(iter.next());
+  console.log(iter.next());
+  console.log(iter.next());
+  console.log(iter.next());
+
+})();
