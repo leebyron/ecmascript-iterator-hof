@@ -220,10 +220,10 @@ global.IsConcatSpreadable = function IsConcatSpreadable(O) {
 };
 
 // 25.1.2
+var originalArrayIteratorFn = [][Symbol.iterator];
 global.IteratorPrototype = (function () {
-  var arrayIteratorFn = [][Symbol.iterator];
-  if (arrayIteratorFn) {
-    var arrayIterator = arrayIteratorFn.call([]);
+  if (originalArrayIteratorFn) {
+    var arrayIterator = originalArrayIteratorFn.call([]);
     return Object.getPrototypeOf(Object.getPrototypeOf(arrayIterator));
   }
   return {};
@@ -239,11 +239,15 @@ if (!IteratorPrototype[Symbol.iterator]) {
 // 22.1.3
 global.ArrayPrototype = Array.prototype;
 
-var needsArrayPrototypeNextPolyfill = false;
+var needsArrayIteratorPolyfill =
+  !ArrayPrototype.entries ||
+  !ArrayPrototype.keys ||
+  !ArrayPrototype.values ||
+  !ArrayPrototype[Symbol.iterator];
 
-// 22.1.3.4
-if (!ArrayPrototype.entries) {
-  needsArrayPrototypeNextPolyfill = true;
+if (needsArrayIteratorPolyfill) {
+
+  // 22.1.3.4
   CreateMethodProperty(ArrayPrototype, 'entries', function ArrayPrototype_entries() {
     // 1. Let O be the result of calling ToObject with the this value as its argument.
     // 2. ReturnIfAbrupt(O).
@@ -252,11 +256,8 @@ if (!ArrayPrototype.entries) {
     // 3. Return CreateArrayIterator(O, "key+value").
     return CreateArrayIterator(O, 'key+value');
   });
-}
 
-// 22.1.3.13
-if (!ArrayPrototype.keys) {
-  needsArrayPrototypeNextPolyfill = true;
+  // 22.1.3.13
   CreateMethodProperty(ArrayPrototype, 'keys', function ArrayPrototype_keys() {
     // 1. Let O be the result of calling ToObject with the this value as its argument.
     // 2. ReturnIfAbrupt(O).
@@ -265,11 +266,8 @@ if (!ArrayPrototype.keys) {
     // 3. Return CreateArrayIterator(O, "key").
     return CreateArrayIterator(O, 'key');
   });
-}
 
-// 22.1.3.29
-if (!ArrayPrototype.values) {
-  needsArrayPrototypeNextPolyfill = true;
+  // 22.1.3.29
   CreateMethodProperty(ArrayPrototype, 'values', function ArrayPrototype_values() {
     // 1. Let O be the result of calling ToObject with the this value as its argument.
     // 2. ReturnIfAbrupt(O).
@@ -278,38 +276,32 @@ if (!ArrayPrototype.values) {
     // 3. Return CreateArrayIterator(O, "value").
     return CreateArrayIterator(O, 'value');
   });
-}
 
-// 22.1.3.30
-if (!ArrayPrototype[Symbol.iterator]) {
-  needsArrayPrototypeNextPolyfill = true;
+  // 22.1.3.30
   CreateMethodProperty(ArrayPrototype, Symbol.iterator, ArrayPrototype.values);
-}
 
-// 22.1.5.1
-global.CreateArrayIterator = function CreateArrayIterator(array, kind) {
-  var iterator = ObjectCreate(
-    ArrayIteratorPrototype,
-    ['[[IteratedObject]]', '[[ArrayIteratorNextIndex]]', '[[ArrayIterationKind]]']
-  );
-  iterator['[[IteratedObject]]'] = array;
-  iterator['[[ArrayIteratorNextIndex]]'] = 0;
-  iterator['[[ArrayIterationKind]]'] = kind;
-  return iterator;
-}
+  // 22.1.5.1
+  global.CreateArrayIterator = function CreateArrayIterator(array, kind) {
+    var iterator = ObjectCreate(
+      ArrayIteratorPrototype,
+      ['[[IteratedObject]]', '[[ArrayIteratorNextIndex]]', '[[ArrayIterationKind]]']
+    );
+    iterator['[[IteratedObject]]'] = array;
+    iterator['[[ArrayIteratorNextIndex]]'] = 0;
+    iterator['[[ArrayIterationKind]]'] = kind;
+    return iterator;
+  };
 
-// 22.1.5.2
-global.ArrayIteratorPrototype = (function () {
-  var arrayIteratorFn = [][Symbol.iterator];
-  if (arrayIteratorFn) {
-    var arrayIterator = arrayIteratorFn.call([]);
-    return Object.getPrototypeOf(arrayIterator);
-  }
-  return ObjectCreate(IteratorPrototype);
-})();
+  // 22.1.5.2
+  global.ArrayIteratorPrototype = (function () {
+    if (originalArrayIteratorFn) {
+      var arrayIterator = originalArrayIteratorFn.call([]);
+      return Object.getPrototypeOf(arrayIterator);
+    }
+    return ObjectCreate(IteratorPrototype);
+  })();
 
-// 22.1.5.2.1
-if (!ArrayIteratorPrototype.next || needsArrayPrototypeNextPolyfill) {
+  // 22.1.5.2.1
   CreateMethodProperty(ArrayIteratorPrototype, 'next', function() {
     // 1. Let O be the this value.
     var O = this;

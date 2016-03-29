@@ -7,9 +7,9 @@ require('./polyfill-spec');
   var mapped = ['A', 'B', 'C'][Symbol.iterator]().map(function (x) {
     return x + x;
   });
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
+  console.log(mapped.next(), 'AA');
+  console.log(mapped.next(), 'BB');
+  console.log(mapped.next(), 'CC');
   console.log(mapped.next());
   console.log(mapped.next());
 })();

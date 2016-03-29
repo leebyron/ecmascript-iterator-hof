@@ -218,16 +218,16 @@ CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_fil
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
   var context = {
-    '[[CallbackFunction]]': callbackFn,
-    '[[CallbackContext]]': T
+    '[[FilterFunction]]': callbackFn,
+    '[[FilterContext]]': T
   };
   return CreateTransformedIterator(O, FilterIteratorTransform, context);
 });
 
 function FilterIteratorTransform(result, index) {
   var O = Object(this);
-  var callbackFn = O['[[CallbackFunction]]'];
-  var T = O['[[CallbackContext]]'];
+  var callbackFn = O['[[FilterFunction]]'];
+  var T = O['[[FilterContext]]'];
   var value = IteratorValue(result);
   if (ToBoolean(callbackFn.call(T, value, index, O)) === false) {
     return undefined;
@@ -360,16 +360,16 @@ CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( c
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
   var context = {
-    '[[CallbackFunction]]': callbackFn,
-    '[[CallbackContext]]': T
+    '[[MapFunction]]': callbackFn,
+    '[[MapContext]]': T
   };
   return CreateTransformedIterator(O, MapIteratorTransform, context);
 });
 
 function MapIteratorTransform(result, index) {
   var O = Object(this);
-  var callbackFn = O['[[CallbackFunction]]'];
-  var T = O['[[CallbackContext]]'];
+  var callbackFn = O['[[MapFunction]]'];
+  var T = O['[[MapContext]]'];
   var value = IteratorValue(result);
   var mappedValue = callbackFn.call(T, value, index, O);
   return CreateIterResultObject(mappedValue, false);
