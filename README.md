@@ -59,7 +59,7 @@ right, which is not something Iterators can do, so it is omitted.
 This method returns `n` independent iterators from this iterator by buffering
 the original iterator.
 
-Borrowed from Python's itertools.
+This same method can be found in Python's [itertools](https://docs.python.org/2/library/itertools.html#itertools.tee).
 
 
 #### transform
@@ -70,6 +70,25 @@ simultaneous mapping and filtering as well as ending iteration early.
 
 The iterators it returns allow for chaining of the **return**, and
 **throw** methods.
+
+```js
+myArray.values().transform(result => {
+  // result is an IteratorResult (`{ value, done }`)
+  // Many operations can be done:
+
+  // Pass the result through:
+  return result;
+
+  // Skip a result (filter):
+  return null;
+
+  // Pass a different result (map):
+  return { value: result.value + result.value, done: false };
+
+  // End iteration early:
+  return { value: undefined, done: true };
+});
+```
 
 
 #### zip
