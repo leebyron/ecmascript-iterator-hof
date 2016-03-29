@@ -72,6 +72,21 @@ require('./polyfill-spec');
 })();
 
 (function () {
+  // Iterators can be use includes
+  var includes = ['A', 'B', 'C'].values().includes('B');
+  console.log(includes, true);
+
+  var includes2 = ['A', 'B', 'C'].values().includes('D');
+  console.log(includes2, false);
+
+  var includes3 = [1, 2, NaN].values().includes(NaN);
+  console.log(includes3, true);
+
+  var includes4 = [2, 1, 0].values().includes(-0);
+  console.log(includes4, true);
+})();
+
+(function () {
   // iterators can use every
   var every = ['A', 'B', 'C'].values().every(function(x) {
     console.log('every testing', x);

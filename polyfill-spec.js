@@ -181,6 +181,24 @@ function ConcatIteratorReturn(value) {
 }
 
 /**
+ * Returns true if the search-element in the iterated values.
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'includes', function IteratorPrototype_includes( searchElement ) {
+  var O = Object(this);
+  while (true) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return false;
+    }
+    var value = IteratorValue(result);
+    if (SameValueZero(searchElement, value) === true) {
+      return true;
+    }
+  }
+});
+
+/**
  * Returns true if all items in the list pass the predicate.
  * Consumes the iterable.
  */

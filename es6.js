@@ -43,6 +43,11 @@ global.IsCallable = function IsCallable(argument) {
   return typeof argument === 'function';
 };
 
+// 7.2.10
+global.SameValueZero = function SameValueZero(x, y) {
+  return x === y || (x !== x && y !== y);
+};
+
 // 7.3.5
 global.CreateMethodProperty = function CreateMethodProperty(O, P, V) {
   return Object.defineProperty(O, P, {

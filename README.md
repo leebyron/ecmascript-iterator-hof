@@ -33,6 +33,7 @@ methods on all iterators.
 This proposal suggests adding the following methods to *%IteratorPrototype%*:
 
  * **concat**
+ * **includes**
  * **every**
  * **filter**
  * **flatten**
