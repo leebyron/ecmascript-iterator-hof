@@ -237,9 +237,9 @@ global.IteratorPrototype = (function () {
 
 // 25.1.2.1.1
 if (!IteratorPrototype[Symbol.iterator]) {
-  IteratorPrototype[Symbol.iterator] = function IteratorPrototype_iterator() {
+  CreateMethodProperty(IteratorPrototype, Symbol.iterator, function IteratorPrototype_iterator() {
     return this;
-  };
+  });
 }
 
 // 22.1.3
