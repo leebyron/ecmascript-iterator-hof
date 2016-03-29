@@ -96,7 +96,7 @@ function IsSomeReturnable(iterators) {
   return false;
 }
 
-CreateMethodProperty(IteratorPrototype, 'concat', function (/*...iterables*/) {
+CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_concat(/*...iterables*/) {
   var O = Object(this);
   if (arguments.length === 0) {
     return O;
@@ -184,7 +184,7 @@ function ConcatIteratorReturn(value) {
  * Returns true if all items in the list pass the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'every', function (callbackFn /*[ , initialValue ]*/) {
+CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_every(callbackFn /*[ , initialValue ]*/) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -209,7 +209,7 @@ CreateMethodProperty(IteratorPrototype, 'every', function (callbackFn /*[ , init
  * values or false to skip values of this iterator. Returns a new iterator.
  * Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'filter', function ( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_filter( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -238,7 +238,7 @@ function FilterIteratorTransform(result) {
  * of flattened values. Accepts a maximum depth to flatten to, which must be >0
  * and defaults to +Infinity.
  */
-CreateMethodProperty(IteratorPrototype, 'flatten', function ( /* [ depth ] */ ) {
+CreateMethodProperty(IteratorPrototype, 'flatten', function IteratorPrototype_flatten( /* [ depth ] */ ) {
   var O = Object(this);
   var depth;
   if (arguments.length === 0) {
@@ -329,7 +329,7 @@ function FlattenIteratorThrow(exception) {
  * A specific `transform` which uses a mapper callbackFn to map from original
  * values to new values. Returns a new iterator. Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'map', function ( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -355,7 +355,7 @@ function MapIteratorTransform(result) {
  * Reduces this iterator with a reducing callbackFn to a single value.
  * Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'reduce', function ( callbackFn /*[ , initialValue ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'reduce', function IteratorPrototype_reduce( callbackFn /*[ , initialValue ]*/ ) {
   var O = Object(this);
   if (arguments.length > 1) {
     return ReduceIterator(O, callbackFn, initialValue);
@@ -392,7 +392,7 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
 /**
  * Returns a new iterator which represents a slice of this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'slice', function (start, end) {
+CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slice(start, end) {
   var O = Object(this);
   var relativeStart = ToInteger(start);
   if (relativeStart < 0) {
@@ -434,7 +434,7 @@ function SliceIteratorTransform(result) {
  * Returns true if any item in the list passes the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initialValue ]*/) {
+CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(callbackFn /*[ , initialValue ]*/) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -454,7 +454,7 @@ CreateMethodProperty(IteratorPrototype, 'some', function (callbackFn /*[ , initi
   }
 });
 
-CreateMethodProperty(IteratorPrototype, 'tee', function (amount) {
+CreateMethodProperty(IteratorPrototype, 'tee', function IteratorPrototype_tee(amount) {
   var O = Object(this);
   if (amount === undefined) {
     amount = 2;
@@ -548,7 +548,7 @@ function TeeIteratorReturn(value) {
  *  * End iteration early - return IteratorResult where *done* is **true**.
  *
  */
-CreateMethodProperty(IteratorPrototype, 'transform', function ( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'transform', function IteratorPrototype_transform( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
   return CreateTransformedIterator(O, callbackFn, thisArg);
@@ -649,7 +649,7 @@ function TransformedIteratorThrow(exception) {
  * yields IteratorResults where the value property contains an array tuple of
  * the values of each iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'zip', function (/*...iterables*/) {
+CreateMethodProperty(IteratorPrototype, 'zip', function IteratorPrototype_zip(/*...iterables*/) {
   var O = Object(this);
   var iterators = Array(arguments.length + 1);
   iterators[0] = O;

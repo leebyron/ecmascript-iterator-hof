@@ -231,43 +231,60 @@ global.IteratorPrototype = (function () {
 
 // 25.1.2.1.1
 if (!IteratorPrototype[Symbol.iterator]) {
-  IteratorPrototype[Symbol.iterator] = function () {
+  IteratorPrototype[Symbol.iterator] = function IteratorPrototype_iterator() {
     return this;
   };
 }
 
-// 22.1.3.4
-CreateMethodProperty(Array.prototype, 'entries', function () {
-  // 1. Let O be the result of calling ToObject with the this value as its argument.
-  // 2. ReturnIfAbrupt(O).
-  var O = Object(this);
+// 22.1.3
+global.ArrayPrototype = Array.prototype;
 
-  // 3. Return CreateArrayIterator(O, "key+value").
-  return CreateArrayIterator(O, 'key+value');
-});
+var needsArrayPrototypeNextPolyfill = false;
+
+// 22.1.3.4
+if (!ArrayPrototype.entries) {
+  needsArrayPrototypeNextPolyfill = true;
+  CreateMethodProperty(ArrayPrototype, 'entries', function ArrayPrototype_entries() {
+    // 1. Let O be the result of calling ToObject with the this value as its argument.
+    // 2. ReturnIfAbrupt(O).
+    var O = Object(this);
+
+    // 3. Return CreateArrayIterator(O, "key+value").
+    return CreateArrayIterator(O, 'key+value');
+  });
+}
 
 // 22.1.3.13
-CreateMethodProperty(Array.prototype, 'keys', function () {
-  // 1. Let O be the result of calling ToObject with the this value as its argument.
-  // 2. ReturnIfAbrupt(O).
-  var O = Object(this);
+if (!ArrayPrototype.keys) {
+  needsArrayPrototypeNextPolyfill = true;
+  CreateMethodProperty(ArrayPrototype, 'keys', function ArrayPrototype_keys() {
+    // 1. Let O be the result of calling ToObject with the this value as its argument.
+    // 2. ReturnIfAbrupt(O).
+    var O = Object(this);
 
-  // 3. Return CreateArrayIterator(O, "key").
-  return CreateArrayIterator(O, 'key');
-});
+    // 3. Return CreateArrayIterator(O, "key").
+    return CreateArrayIterator(O, 'key');
+  });
+}
 
 // 22.1.3.29
-CreateMethodProperty(Array.prototype, 'values', function () {
-  // 1. Let O be the result of calling ToObject with the this value as its argument.
-  // 2. ReturnIfAbrupt(O).
-  var O = Object(this);
+if (!ArrayPrototype.values) {
+  needsArrayPrototypeNextPolyfill = true;
+  CreateMethodProperty(ArrayPrototype, 'values', function ArrayPrototype_values() {
+    // 1. Let O be the result of calling ToObject with the this value as its argument.
+    // 2. ReturnIfAbrupt(O).
+    var O = Object(this);
 
-  // 3. Return CreateArrayIterator(O, "value").
-  return CreateArrayIterator(O, 'value');
-});
+    // 3. Return CreateArrayIterator(O, "value").
+    return CreateArrayIterator(O, 'value');
+  });
+}
 
 // 22.1.3.30
-CreateMethodProperty(Array.prototype, Symbol.iterator, Array.prototype.values);
+if (!ArrayPrototype[Symbol.iterator]) {
+  needsArrayPrototypeNextPolyfill = true;
+  CreateMethodProperty(ArrayPrototype, Symbol.iterator, ArrayPrototype.values);
+}
 
 // 22.1.5.1
 global.CreateArrayIterator = function CreateArrayIterator(array, kind) {
@@ -282,10 +299,17 @@ global.CreateArrayIterator = function CreateArrayIterator(array, kind) {
 }
 
 // 22.1.5.2
-global.ArrayIteratorPrototype = ObjectCreate(IteratorPrototype);
+global.ArrayIteratorPrototype = (function () {
+  var arrayIteratorFn = [][Symbol.iterator];
+  if (arrayIteratorFn) {
+    var arrayIterator = arrayIteratorFn.call([]);
+    return Object.getPrototypeOf(arrayIterator);
+  }
+  return ObjectCreate(IteratorPrototype);
+})();
 
 // 22.1.5.2.1
-if (!ArrayIteratorPrototype.next) {
+if (!ArrayIteratorPrototype.next || needsArrayPrototypeNextPolyfill) {
   CreateMethodProperty(ArrayIteratorPrototype, 'next', function() {
     // 1. Let O be the this value.
     var O = this;
