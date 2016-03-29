@@ -184,7 +184,7 @@ function ConcatIteratorReturn(value) {
  * Returns true if all items in the list pass the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_every(callbackFn /*[ , initialValue ]*/) {
+CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_every( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -392,7 +392,7 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
 /**
  * Returns a new iterator which represents a slice of this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slice(start, end) {
+CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slice( start, end ) {
   var O = Object(this);
   var relativeStart = ToInteger(start);
   if (relativeStart < 0) {
@@ -434,7 +434,7 @@ function SliceIteratorTransform(result) {
  * Returns true if any item in the list passes the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(callbackFn /*[ , initialValue ]*/) {
+CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -454,7 +454,7 @@ CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(
   }
 });
 
-CreateMethodProperty(IteratorPrototype, 'tee', function IteratorPrototype_tee(amount) {
+CreateMethodProperty(IteratorPrototype, 'tee', function IteratorPrototype_tee( amount ) {
   var O = Object(this);
   if (amount === undefined) {
     amount = 2;
@@ -649,7 +649,7 @@ function TransformedIteratorThrow(exception) {
  * yields IteratorResults where the value property contains an array tuple of
  * the values of each iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'zip', function IteratorPrototype_zip(/*...iterables*/) {
+CreateMethodProperty(IteratorPrototype, 'zip', function IteratorPrototype_zip( /* ...iterables */ ) {
   var O = Object(this);
   var iterators = Array(arguments.length + 1);
   iterators[0] = O;
