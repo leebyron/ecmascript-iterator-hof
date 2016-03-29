@@ -1,43 +1,66 @@
 "use strict";
 
+// Micro-harness
+var assert = require('assert');
+function test(name, fn) {
+  console.log(name);
+  fn();
+}
+
+function assertValues(iterator, values) {
+  assert(iterator instanceof Iterator);
+  for (var i = 0; i < values.length; i++) {
+    assert.deepStrictEqual(iterator.next(), { value: values[i], done: false });
+  }
+  // Flush the iterator
+  for (var f = 0; f < 3; f++) {
+    assert.deepStrictEqual(iterator.next(), { value: undefined, done: true });
+  }
+}
+
+// Tests
 require('./polyfill-spec');
 
-(function () {
+
+test('Iterator can be mapped', () => {
   // Iterator can be mapped
   var mapped = ['A', 'B', 'C'][Symbol.iterator]().map(function (x) {
     return x + x;
   });
-  console.log(mapped.next(), 'AA');
-  console.log(mapped.next(), 'BB');
-  console.log(mapped.next(), 'CC');
-  console.log(mapped.next());
-  console.log(mapped.next());
-})();
 
-(function () {
-  // Iterator can be forEach'd
+  assertValues(mapped, [ 'AA', 'BB', 'CC' ]);
+});
+
+test('Iterator can forEach', () => {
   var mapped = ['A', 'B', 'C'].values().map(function (x) {
     return x + x;
   });
-  mapped.forEach(function (x) {
-    console.log(x);
+  var args = [];
+  mapped.forEach(function (v, i, o) {
+    args.push([ v, i, o ]);
   });
-})();
+  assert.deepStrictEqual(args, [
+    [ 'AA', 0, mapped ],
+    [ 'BB', 1, mapped ],
+    [ 'CC', 2, mapped ],
+  ]);
+});
 
-(function () {
-  // Iterator can be filtered
+test('Iterator can be filtered', () => {
   var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x) {
     return x.charCodeAt(0) % 2 === 0;
   });
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-})();
+  assertValues(mapped, [ 'B', 'D', 'F' ]);
+});
 
-(function () {
-  // Iterators can be zipped
+test('Iterator can be filtered by index', () => {
+  var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x, index) {
+    return index % 2 === 0;
+  });
+  assertValues(mapped, [ 'A', 'C', 'E' ]);
+});
+
+test('Iterators can be zipped', () => {
   var a1 = ['A', 'B', 'C'];
   var a2 = ['X', 'Y', 'Z'];
   var zipped = a1.values().zip(a2);
@@ -46,18 +69,16 @@ require('./polyfill-spec');
   console.log(zipped.next());
   console.log(zipped.next());
   console.log(zipped.next());
-})();
+});
 
-(function () {
-  // Iterators can be reduced
+test('Iterators can be reduced', () => {
   var reduced = ['A', 'B', 'C'].values().reduce(function(x, y) {
     return x + y;
   });
   console.log(reduced);
-})();
+});
 
-(function () {
-  // Iterators can be use some
+test('Iterators can be use some', () => {
   var some = ['A', 'B', 'C'].values().some(function(x) {
     console.log('some testing', x);
     return x === 'B';
@@ -69,10 +90,9 @@ require('./polyfill-spec');
     return x === 'D';
   });
   console.log(some2);
-})();
+});
 
-(function () {
-  // Iterators can be use includes
+test('Iterators can be use includes', () => {
   var includes = ['A', 'B', 'C'].values().includes('B');
   console.log(includes, true);
 
@@ -84,10 +104,9 @@ require('./polyfill-spec');
 
   var includes4 = [2, 1, 0].values().includes(-0);
   console.log(includes4, true);
-})();
+});
 
-(function () {
-  // iterators can use every
+test('iterators can use every', () => {
   var every = ['A', 'B', 'C'].values().every(function(x) {
     console.log('every testing', x);
     return x === 'B';
@@ -99,20 +118,18 @@ require('./polyfill-spec');
     return x !== 'D';
   });
   console.log(every2);
-})();
+});
 
-(function () {
-  // Iterator can be flattened
+test('Iterator can be flattened', () => {
   var flattened = [['A'], [['B']], ['C']].values().flatten();
   console.log(flattened.next());
   console.log(flattened.next());
   console.log(flattened.next());
   console.log(flattened.next());
   console.log(flattened.next());
-})();
+});
 
-(function () {
-  // Iterator can be "flat mapped" via composition
+test('Iterator can be "flat mapped" via composition', () => {
   var flattened = ['A', 'B', 'C'].values().map(function (v) {
     return [ v, v.toLowerCase(), [v] ];
   }).flatten(1);
@@ -127,10 +144,9 @@ require('./polyfill-spec');
   console.log(flattened.next());
   console.log(flattened.next());
   console.log(flattened.next());
-})();
+});
 
-(function () {
-  // iterators can be concatted
+test('iterators can be concatted', () => {
   var a = ['A', 'B', 'C'];
   var concatted = a.values().concat(a, a.values(), a.values());
   console.log(concatted.next());
@@ -147,10 +163,9 @@ require('./polyfill-spec');
   console.log(concatted.next());
   console.log(concatted.next());
   console.log(concatted.next());
-})();
+});
 
-(function () {
-  // concat respects spreadable
+test('concat respects spreadable', () => {
   var a = ['A', 'B', 'C'];
   var noSpread = ['D', 'E', 'F'];
   noSpread[Symbol.isConcatSpreadable] = false;
@@ -162,20 +177,18 @@ require('./polyfill-spec');
   console.log(concatted.next());
   console.log(concatted.next());
   console.log(concatted.next());
-})();
+});
 
-(function () {
-  // iterator can be sliced
+test('iterator can be sliced', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(1, 3);
   console.log(sliced.next());
   console.log(sliced.next());
   console.log(sliced.next());
   console.log(sliced.next());
-})();
+});
 
-(function () {
-  // slice arguments are optional
+test('slice arguments are optional', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(3);
   console.log(sliced.next());
@@ -183,10 +196,9 @@ require('./polyfill-spec');
   console.log(sliced.next());
   console.log(sliced.next());
   console.log(sliced.next());
-})();
+});
 
-(function () {
-  // tee returns two independent iterators
+test('tee returns two independent iterators', () => {
   var a = ['A', 'B', 'C'];
   var tees = a.values().tee();
   var t1 = tees[0];
@@ -197,10 +209,9 @@ require('./polyfill-spec');
   console.log(zipped.next());
   console.log(zipped.next());
   console.log(zipped.next());
-})();
+});
 
-(function () {
-  // user-land iterators can use the adaptor to get IteratorPrototype
+test('user-land iterators can use the adaptor to get IteratorPrototype', () => {
   var iterable = {};
   iterable[Symbol.iterator] = function() {
     var i = 0;
@@ -218,10 +229,9 @@ require('./polyfill-spec');
   console.log(mapped.next());
   console.log(mapped.next());
   console.log(mapped.next());
-})();
+});
 
-(function () {
-  // GENERATORS
+test('GENERATORS', () => {
   function* fib() {
     var i = 1;
     var j = 1;
@@ -246,10 +256,9 @@ require('./polyfill-spec');
   console.log(mapped.next());
   console.log(mapped.next());
   console.log(mapped.throw(new Error('wat')));
-})();
+});
 
-(function () {
-  // Transform can be used to build interesting things:
+test('Transform can be used to build interesting things:', () => {
 
   function reductions(iterable, reducer, initial) {
     var accum;
@@ -278,4 +287,4 @@ require('./polyfill-spec');
   console.log(iter.next());
   console.log(iter.next());
 
-})();
+});

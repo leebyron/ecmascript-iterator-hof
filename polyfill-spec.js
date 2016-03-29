@@ -637,7 +637,6 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
   }
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
-  var index = O['[[TransformIndex]]'];
   var result;
   if (arguments.length > 0) {
     var value = arguments[0];
@@ -653,7 +652,9 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
       O['[[TransformIndex]]'] = undefined;
       return result;
     }
+    var index = O['[[TransformIndex]]'];
     result = transformer.call(context, result, index, O);
+    O['[[TransformIndex]]'] = index + 1;
     if (result === undefined || result === null) {
       result = IteratorNext(iterator);
       continue;
@@ -667,8 +668,6 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
       O['[[TransformContext]]'] = undefined;
       O['[[TransformIndex]]'] = undefined;
       IteratorClose(iterator, NormalCompletion());
-    } else {
-      O['[[TransformIndex]]'] = index + 1;
     }
     return result;
   }
