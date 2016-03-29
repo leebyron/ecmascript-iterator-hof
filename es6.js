@@ -78,11 +78,17 @@ global.GetMethod = function GetMethod(O, P) {
 // 7.4.1
 global.GetIterator = function GetIterator(obj, method) {
   // 1. ReturnIfAbrupt(obj).
+  if (Object(obj) !== obj) {
+    throw new TypeError('Must provide Iterable Object.');
+  }
   // 2. If method was not passed, then
   if (arguments.length < 2) {
     // a. Let method be GetMethod(obj, @@iterator).
-    // b. ReturnIfAbrupt(method).
     method = GetMethod(obj, Symbol.iterator);
+    // b. ReturnIfAbrupt(method).
+    if (Object(method) !== method) {
+      throw new TypeError('Must implement @@iterator Symbol.');
+    }
   }
   // 3. If IsCallable(method) is false, then throw a TypeError exception.
   if (IsCallable(method) === false) {

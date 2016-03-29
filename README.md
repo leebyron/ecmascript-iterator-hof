@@ -4,10 +4,31 @@
 
 **Author:** Lee Byron
 
-Providing common higher order function utilities to all Iterators.
-
-This proposal is still very much a work in progress and has not yet been
+> Note: This proposal is still very much a work in progress and has not yet been
 formally proposed.
+
+Providing common higher order function utilities to all Iterators, via the
+Adaptor pattern.
+
+This proposes introducing a new global function, `Iterator` which performs the
+adaptor pattern.
+
+```js
+var myArray = [ 1, 2, 3 ]
+var myIter = Iterator(myArray) // true
+myIter instanceof Iterator // true
+myIter.next() // { value: 1, done: false }
+```
+
+This provides a nicer alternative to `myArray[Symbol.iterator]()` for accessing
+the default iterator for any iterable collection (including Map and Set),
+provides a clearer way to access *%IteratorPrototype%*, and via the adaptor
+pattern ensures the returned result has *%IteratorPrototype%* in its prototype
+chain.
+
+And if the returned result is always `Iterator(input) instanceof Iterator`, then
+adding higher-order methods to *%IteratorPrototype%* enables familiar collection
+methods on all iterators.
 
 This proposal suggests adding the following methods to *%IteratorPrototype%*:
 
@@ -25,10 +46,11 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **zip**
 
 These should mostly look familiar, they're almost all borrowed from the ES5
-additions to *Array.prototype*. There are a few differences and some new methods:
+additions to *Array.prototype*, most of which originally proposed in [Array#extras](https://blogs.msdn.microsoft.com/ie/2010/12/13/ecmascript-5-part-2-array-extras/).
+There are a few similarities and differences and a couple new methods:
 
 
-#### callbackFn take three args.
+#### callbackFn still take three args.
 
 Most higher order methods on *Array.prototype* accept *callbackFn* of the arity:
 
@@ -47,14 +69,20 @@ Where `value` is (usually) the `value` key of the iterator's next result object,
 called on the iterator, and `iterator` is the iterator being operated over (and
 not the collection from which it was created).
 
+## Methods on Array.prototype not added to Iterator.prototype
 
-#### No <del>reduceRight</del>
+Array's mutative methods (push, pop, shift, unshift, sort) do not make sense in
+the context of Iterators and are omitted.
 
-While Array.prototype contains this method, it requires iterating from the
-right, which is not something Iterators can do, so it is omitted.
+Since Iterators can only be iterated in one direction, all methods requiring
+a reversed traversal are not included:
+
+ * reduceRight
+ * lastIndexOf
+ * reverse
 
 
-## Methods not found on Array.prototype
+## New methods on Iterator.prototype not found on Array.prototype
 
 #### tee
 
