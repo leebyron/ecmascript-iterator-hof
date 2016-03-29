@@ -400,7 +400,7 @@ CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slic
   }
   var relativeEnd;
   if (end === undefined) {
-    relativeEnd = undefined;
+    relativeEnd = Infinity;
   } else {
     relativeEnd = ToInteger(end);
     if (relativeEnd < 0) {
@@ -424,7 +424,7 @@ function SliceIteratorTransform(result) {
   if (count < start) {
     return undefined;
   }
-  if (end !== undefined && count === end) {
+  if (count === end) {
     return CreateIterResultObject(undefined, true);
   }
   return result;
@@ -606,6 +606,9 @@ function TransformedIteratorNext(/*[ value ]*/) {
     if (result === undefined || result === null) {
       result = IteratorNext(iterator);
       continue;
+    }
+    if (Object(result) !== result) {
+      throw new TypeError();
     }
     if (IteratorComplete(result) === true) {
       O['[[OriginalIterator]]'] = undefined;
