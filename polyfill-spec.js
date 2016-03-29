@@ -328,6 +328,28 @@ function FlattenIteratorThrow(exception) {
 }
 
 /**
+ * Equivalent to a for-of loop. Does not return any value.
+ */
+CreateMethodProperty(IteratorPrototype, 'forEach', function IteratorPrototype_forEach( callbackFn /*[ , thisArg ]*/ ) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var result;
+  var index = 0;
+  while (true) {
+    result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return;
+    }
+    var value = IteratorValue(result);
+    callbackFn.call(T, value, index, O);
+    index += 1;
+  }
+});
+
+/**
  * A specific `transform` which uses a mapper callbackFn to map from original
  * values to new values. Returns a new iterator. Consumes this iterator.
  */

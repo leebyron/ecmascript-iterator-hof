@@ -15,6 +15,16 @@ require('./polyfill-spec');
 })();
 
 (function () {
+  // Iterator can be forEach'd
+  var mapped = ['A', 'B', 'C'].values().map(function (x) {
+    return x + x;
+  });
+  mapped.forEach(function (x) {
+    console.log(x);
+  });
+})();
+
+(function () {
   // Iterator can be filtered
   var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x) {
     return x.charCodeAt(0) % 2 === 0;
