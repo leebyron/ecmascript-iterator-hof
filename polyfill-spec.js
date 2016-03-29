@@ -96,7 +96,7 @@ function IsSomeReturnable(iterators) {
   return false;
 }
 
-CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_concat(/*...iterables*/) {
+CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_concat( /* ...iterables */ ) {
   var O = Object(this);
   if (arguments.length === 0) {
     return O;
@@ -190,17 +190,19 @@ CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_ever
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
+  var index = 0;
   while (true) {
     var result = IteratorNext(O);
     if (IteratorComplete(result) === true) {
       return true;
     }
     var value = IteratorValue(result);
-    var testResult = ToBoolean(callbackFn.call(T, value));
+    var testResult = ToBoolean(callbackFn.call(T, value, index, O));
     if (testResult === false) {
       IteratorClose(O, NormalCompletion());
       return false;
     }
+    index += 1;
   }
 });
 
@@ -214,20 +216,20 @@ CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_fil
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var T = arguments.length > 1 ? arguments[1] : undefined;
   var context = {
     '[[CallbackFunction]]': callbackFn,
-    '[[CallbackContext]]': thisArg
+    '[[CallbackContext]]': T
   };
   return CreateTransformedIterator(O, FilterIteratorTransform, context);
 });
 
-function FilterIteratorTransform(result) {
+function FilterIteratorTransform(result, index) {
   var O = Object(this);
   var callbackFn = O['[[CallbackFunction]]'];
-  var thisArg = O['[[CallbackContext]]'];
+  var T = O['[[CallbackContext]]'];
   var value = IteratorValue(result);
-  if (ToBoolean(callbackFn.call(thisArg, value)) === false) {
+  if (ToBoolean(callbackFn.call(T, value, index, O)) === false) {
     return undefined;
   }
   return result;
@@ -334,20 +336,20 @@ CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( c
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var T = arguments.length > 1 ? arguments[1] : undefined;
   var context = {
     '[[CallbackFunction]]': callbackFn,
-    '[[CallbackContext]]': thisArg
+    '[[CallbackContext]]': T
   };
   return CreateTransformedIterator(O, MapIteratorTransform, context);
 });
 
-function MapIteratorTransform(result) {
+function MapIteratorTransform(result, index) {
   var O = Object(this);
   var callbackFn = O['[[CallbackFunction]]'];
-  var thisArg = O['[[CallbackContext]]'];
+  var T = O['[[CallbackContext]]'];
   var value = IteratorValue(result);
-  var mappedValue = callbackFn.call(thisArg, value);
+  var mappedValue = callbackFn.call(T, value, index, O);
   return CreateIterResultObject(mappedValue, false);
 }
 
@@ -367,8 +369,9 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
   if (IsCallable(reducerFn) === false) {
     throw new TypeError();
   }
-  var accumulator;
   var result;
+  var accumulator;
+  var index = 0;
   if (arguments.length > 2) {
     accumulator = initialValue;
   } else {
@@ -377,6 +380,7 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
       throw new TypeError('Reduce of empty iterator with no initial value.');
     }
     accumulator = IteratorValue(result);
+    index += 1;
   }
 
   while (true) {
@@ -385,7 +389,8 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
       return accumulator;
     }
     var value = IteratorValue(result);
-    accumulator = reducerFn(accumulator, value);
+    accumulator = reducerFn(accumulator, value, index, iterator);
+    index += 1;
   }
 }
 
@@ -440,17 +445,19 @@ CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
+  var index = 0;
   while (true) {
     var result = IteratorNext(O);
     if (IteratorComplete(result) === true) {
       return false;
     }
     var value = IteratorValue(result);
-    var testResult = ToBoolean(callbackFn.call(T, value));
+    var testResult = ToBoolean(callbackFn.call(T, value, index, O));
     if (testResult === true) {
       IteratorClose(O, NormalCompletion());
       return true;
     }
+    index += 1;
   }
 });
 
@@ -563,11 +570,13 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   }
   var iterator = ObjectCreate(
     IteratorPrototype,
-    ['[[OriginalIterator]]', '[[TransformFunction]]', '[[TransformContext]]']
+    ['[[OriginalIterator]]', '[[TransformFunction]]', '[[TransformContext]]', '[[TransformIndex]]']
   );
   iterator['[[OriginalIterator]]'] = originalIterator;
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
+  iterator['[[TransformIndex]]'] = 0;
+
   CreateMethodProperty(iterator, 'next', TransformedIteratorNext);
   var returnFn = originalIterator['return'];
   if (IsCallable(returnFn) === true) {
@@ -580,7 +589,7 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   return iterator;
 }
 
-function TransformedIteratorNext(/*[ value ]*/) {
+function TransformedIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
   var iterator = O['[[OriginalIterator]]'];
   if (iterator === undefined) {
@@ -588,6 +597,7 @@ function TransformedIteratorNext(/*[ value ]*/) {
   }
   var transformer = O['[[TransformFunction]]'];
   var context = O['[[TransformContext]]'];
+  var index = O['[[TransformIndex]]'];
   var result;
   if (arguments.length > 0) {
     var value = arguments[0];
@@ -600,9 +610,10 @@ function TransformedIteratorNext(/*[ value ]*/) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
+      O['[[TransformIndex]]'] = undefined;
       return result;
     }
-    result = transformer.call(context, result);
+    result = transformer.call(context, result, index, O);
     if (result === undefined || result === null) {
       result = IteratorNext(iterator);
       continue;
@@ -614,7 +625,10 @@ function TransformedIteratorNext(/*[ value ]*/) {
       O['[[OriginalIterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
+      O['[[TransformIndex]]'] = undefined;
       IteratorClose(iterator, NormalCompletion());
+    } else {
+      O['[[TransformIndex]]'] = index + 1;
     }
     return result;
   }

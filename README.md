@@ -27,25 +27,24 @@ These should mostly look familiar, they're almost all borrowed from the ES5
 additions to *Array.prototype*. There are a few differences and some new methods:
 
 
-#### callbackFn take one arg, not three args.
+#### callbackFn take three args.
 
-Most higher order ops on *Array.prototype* accept *callbackFn* of the arity:
+Most higher order methods on *Array.prototype* accept *callbackFn* of the arity:
 
 ```js
 function (value, index, collection) {...}
 ```
 
-Iterators do not have a concept of index. It is also not helpful to provide the
-iterator itself as an argument since that arg is there to faciliate mutation and
-iterators do not have mutative methods.
-
-The higher order ops on *%IteratorPrototype%* accept *callbackFn* of the arity:
+Iterator higher order methods accept the same function signature:
 
 ```js
-function (value) {...}
+function (value, index, iterator) {...}
 ```
 
-Where *value* is usually the *value* property of an *IteratorResult*.
+Where `value` is (usually) the `value` key of the iterator's next result object,
+`index` is an index starting at 0 which indicates how many times `next` has been
+called on the iterator, and `iterator` is the iterator being operated over (and
+not the collection from which it was created).
 
 
 #### No <del>reduceRight</del>
@@ -53,6 +52,8 @@ Where *value* is usually the *value* property of an *IteratorResult*.
 While Array.prototype contains this method, it requires iterating from the
 right, which is not something Iterators can do, so it is omitted.
 
+
+## Methods not found on Array.prototype
 
 #### tee
 
@@ -72,22 +73,34 @@ The iterators it returns allow for chaining of the **return**, and
 **throw** methods.
 
 ```js
-myArray.values().transform(result => {
-  // result is an IteratorResult (`{ value, done }`)
+var myArray = [ 'A', 'B', 'C', 'D', 'E' ];
+var transformed = myArray.values().transform(function (result, index) {
+  // result is an IteratorResult `{ value, done }`
+
   // Many operations can be done:
+  switch (index) {
 
   // Pass the result through:
-  return result;
+  case 0:
+    return result;
 
   // Skip a result (filter):
-  return null;
+  case 1:
+    return null;
 
   // Pass a different result (map):
-  return { value: result.value + result.value, done: false };
+  case 2:
+    return { value: result.value + result.value, done: false };
 
   // End iteration early:
-  return { value: undefined, done: true };
+  case 3:
+    return { value: undefined, done: true };
+
+  }
 });
+
+// 'A'
+// 'CC'
 ```
 
 
@@ -111,3 +124,8 @@ var map = new Map(keys.values().zip(vals));
 node examples.js
 ```
 
+
+## Open Questions
+
+ * What sort of cleanup is necessary if a HOF throws?
+ * Should transforms operate on "completion value"?

@@ -4,9 +4,6 @@ require('./polyfill-spec');
 
 (function () {
   // Iterator can be mapped
-  // console.log(['A', 'B', 'C'][Symbol.iterator]().next());
-  // console.log(['A', 'B', 'C'].values().next());
-
   var mapped = ['A', 'B', 'C'][Symbol.iterator]().map(function (x) {
     return x + x;
   });
