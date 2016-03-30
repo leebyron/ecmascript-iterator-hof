@@ -338,20 +338,25 @@ test('concat respects spreadable', () => {
 test('iterator can be sliced', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(1, 3);
-  console.log(sliced.next());
-  console.log(sliced.next());
-  console.log(sliced.next());
-  console.log(sliced.next());
+
+  assertValues(sliced, [ 'B', 'C' ]);
 });
 
-test('slice arguments are optional', () => {
+test('slice end argument is optional', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(3);
-  console.log(sliced.next());
-  console.log(sliced.next());
-  console.log(sliced.next());
-  console.log(sliced.next());
-  console.log(sliced.next());
+
+  assertValues(sliced, [ 'D', 'E', 'F' ]);
+});
+
+test('slice arguments cannot be negative', () => {
+  assert.throws(function () {
+    [ 'A', 'B', 'C' ].values().slice(-1);
+  }, TypeError);
+
+  assert.throws(function () {
+    [ 'A', 'B', 'C' ].values().slice(0, -1);
+  }, TypeError);
 });
 
 test('tee returns two independent iterators', () => {
