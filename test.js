@@ -359,37 +359,70 @@ test('slice arguments cannot be negative', () => {
   }, TypeError);
 });
 
-test('tee returns two independent iterators', () => {
+test('tee returns independent iterators', () => {
+  var a = ['A', 'B', 'C'];
+  var tees = a.values().tee(4);
+  var t1 = tees[0];
+  var t2 = tees[1];
+  var t3 = tees[2];
+  var t4 = tees[3];
+
+  assertValues(t1, [ 'A', 'B', 'C' ]);
+  assertValues(t2, [ 'A', 'B', 'C' ]);
+  assertValues(t3, [ 'A', 'B', 'C' ]);
+  assertValues(t4, [ 'A', 'B', 'C' ]);
+});
+
+test('tee returns two independent iterators by default', () => {
   var a = ['A', 'B', 'C'];
   var tees = a.values().tee();
   var t1 = tees[0];
   var t2 = tees[1];
-  var zipped = t1.zip(t2.map(function (x) { return x + x; }));
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
+
+  assertValues(t1, [ 'A', 'B', 'C' ]);
+  assertValues(t2, [ 'A', 'B', 'C' ]);
 });
 
 test('user-land iterators can use the adaptor to get IteratorPrototype', () => {
-  var iterable = {};
-  iterable[Symbol.iterator] = function() {
-    var i = 0;
-    return {
-      next: function() {
-        return { value: 'Hello' + (++i), done: false };
+  var next = createSpy(function () {
+    if (!this.i) {
+      this.i = 0;
+    }
+    if (this.i === 3) {
+      return { value: undefined, done: true };
+    }
+    return { value: 'Hi' + (++this.i), done: false };
+  });
+
+  var myIterable = {
+    [Symbol.iterator]: function() {
+      return {
+        [Symbol.iterator]: function() { return this; },
+        next: next
       }
-    };
+    }
   };
 
-  var mapped = Iterator(iterable).map(function (x) { return x + x; });
+  var mapper = createSpy(function (x) { return x + x; });
 
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
+  var origIter = myIterable[Symbol.iterator]();
+  var iter = Iterator(origIter);
+  var mapped = iter.map(mapper);
+
+  assertValues(mapped, [ 'Hi1Hi1', 'Hi2Hi2', 'Hi3Hi3' ]);
+
+  assert.deepStrictEqual(next.calls, [
+    [ origIter, [], { value: 'Hi1', done: false } ],
+    [ origIter, [], { value: 'Hi2', done: false } ],
+    [ origIter, [], { value: 'Hi3', done: false } ],
+    [ origIter, [], { value: undefined, done: true } ],
+  ]);
+
+  assert.deepStrictEqual(mapper.calls, [
+    [ undefined, [ 'Hi1', 0, iter ], 'Hi1Hi1' ],
+    [ undefined, [ 'Hi2', 1, iter ], 'Hi2Hi2' ],
+    [ undefined, [ 'Hi3', 2, iter ], 'Hi3Hi3' ],
+  ]);
 });
 
 test('GENERATORS', () => {
