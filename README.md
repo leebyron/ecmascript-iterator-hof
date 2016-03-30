@@ -202,4 +202,4 @@ node examples.js
  * What sort of cleanup is necessary if a HOF throws?
  * Should transforms operate on "completion value"?
  * Prototypes vs method assignments
-
+ * Test and double check all return/throw methods for appropriate behavior
