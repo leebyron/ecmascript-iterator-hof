@@ -18,12 +18,26 @@ function assertValues(iterator, values) {
   }
 }
 
+function createSpy(fn) {
+  var calls = [];
+  var spy = function spy() {
+    var returnValue;
+    if (fn) {
+      returnValue = fn.apply(this, arguments);
+    }
+    calls.push([ this, Array.prototype.slice.apply(arguments), returnValue ]);
+    return returnValue;
+  };
+  spy.calls = calls;
+  return spy;
+}
+
+
 // Tests
 require('./polyfill-spec');
 
 
 test('Iterator can be mapped', () => {
-  // Iterator can be mapped
   var mapped = ['A', 'B', 'C'][Symbol.iterator]().map(function (x) {
     return x + x;
   });
@@ -32,17 +46,13 @@ test('Iterator can be mapped', () => {
 });
 
 test('Iterator can forEach', () => {
-  var mapped = ['A', 'B', 'C'].values().map(function (x) {
-    return x + x;
-  });
-  var args = [];
-  mapped.forEach(function (v, i, o) {
-    args.push([ v, i, o ]);
-  });
-  assert.deepStrictEqual(args, [
-    [ 'AA', 0, mapped ],
-    [ 'BB', 1, mapped ],
-    [ 'CC', 2, mapped ],
+  var iter = [ 'A', 'B', 'C' ].values();
+  var spy = createSpy();
+  iter.forEach(spy);
+  assert.deepStrictEqual(spy.calls, [
+    [ undefined, [ 'A', 0, iter ], undefined ],
+    [ undefined, [ 'B', 1, iter ], undefined ],
+    [ undefined, [ 'C', 2, iter ], undefined ],
   ]);
 });
 
