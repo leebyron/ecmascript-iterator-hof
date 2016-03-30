@@ -278,6 +278,134 @@ CreateMethodProperty(IteratorPrototype, 'find', function IteratorPrototype_find(
 });
 
 /**
+ * FlatMaps this iterator into a new iterator by mapping each IteratorResult
+ * with the transforming callbackFn, asserting an iterator is returned, and
+ * flattening that response into the new iterator's output.
+ */
+CreateMethodProperty(IteratorPrototype, 'flatMap', function IteratorPrototype_flatMap( callbackFn /*[ , thisArg ]*/ ) {
+  var O = Object(this);
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  return CreateFlatMappedIterator(O, callbackFn, thisArg);
+});
+
+function CreateFlatMappedIterator(originalIterator, transformer, context) {
+  if (Object(originalIterator) !== originalIterator) {
+    throw new TypeError();
+  }
+  if (IsCallable(transformer) === false) {
+    throw new TypeError();
+  }
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[OriginalIterator]]', '[[FlatMapFunction]]', '[[FlatMapContext]]', '[[FlatMapIndex]]', '[[FlatMapIterator]]']
+  );
+  iterator['[[OriginalIterator]]'] = originalIterator;
+  iterator['[[FlatMapFunction]]'] = transformer;
+  iterator['[[FlatMapContext]]'] = context;
+  iterator['[[FlatMapIndex]]'] = 0;
+  iterator['[[FlatMapIterator]]'] = null;
+
+  CreateMethodProperty(iterator, 'next', FlatMappedIteratorNext);
+  var returnFn = originalIterator['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', FlatMappedIteratorReturn);
+  }
+  var throwFn = originalIterator['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', FlatMappedIteratorThrow);
+  }
+  return iterator;
+}
+
+function FlatMappedIteratorNext( /*[ value ]*/ ) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+
+  while (true) {
+    var flatMapIterator = O['[[FlatMapIterator]]'];
+    if (!flatMapIterator) {
+      var result = IteratorNext(iterator);
+      if (IteratorComplete(result) === true) {
+        O['[[OriginalIterator]]'] = undefined;
+        O['[[FlatMapFunction]]'] = undefined;
+        O['[[FlatMapContext]]'] = undefined;
+        O['[[FlatMapIndex]]'] = undefined;
+        O['[[FlatMapIterator]]'] = undefined;
+        return result;
+      }
+
+      var mapper = O['[[FlatMapFunction]]'];
+      var context = O['[[FlatMapContext]]'];
+      var value = IteratorValue(result);
+      var index = O['[[FlatMapIndex]]'];
+      var flatMapResult = mapper.call(context, value, index, iterator);
+
+      if (GetMethod(flatMapResult, Symbol.iterator) === undefined) {
+        throw new TypeError();
+      }
+
+      flatMapIterator = GetIterator(flatMapResult);
+      O['[[FlatMapIterator]]'] = flatMapIterator;
+      O['[[FlatMapIndex]]'] = index + 1;
+    }
+
+    var result = IteratorNext(flatMapIterator);
+    if (IteratorComplete(result) === true) {
+      O['[[FlatMapIterator]]'] = null;
+      continue; // go get a new one.
+    }
+
+    return result;
+  }
+}
+
+function FlatMappedIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var flatMapIterator = O['[[FlatMapIterator]]'];
+  if (flatMapIterator !== undefined) {
+    IteratorClose(flatMapIterator, NormalCompletion());
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator, value);
+}
+
+function FlatMappedIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[OriginalIterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var flatMapIterator = O['[[FlatMapIterator]]'];
+  if (flatMapIterator) {
+    var throwFn = GetMethod(flatMapIterator, 'throw');
+    if (throwFn === undefined) {
+      IteratorClose(iterator, NormalCompletion());
+    } else {
+      var result = throwFn.call(iterator, exception);
+      if (IteratorComplete(result) === true) {
+        // Return Completion{[[type]]: return , [[value]]:value, [[target]]:empty}.
+        return result;
+      }
+    }
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
+}
+
+/**
  * Flattens an iterator of (concat-spreadable) iterables, returning an iterator
  * of flattened values. Accepts a maximum depth to flatten to, which must be >0
  * and defaults to +Infinity.
@@ -356,20 +484,16 @@ function FlattenIteratorThrow(exception) {
     var iterator = stack.pop();
     var throwFn = GetMethod(iterator, 'throw');
     if (throwFn !== undefined) {
-      var result = throwFn.call(iterator, exception);
-      var done = IteratorComplete(innerResult);
-      if (done === true) {
-        var value = IteratorValue(innerResult);
-        // Return Completion{[[type]]: return , [[value]]:value, [[target]]:empty}.
-        return value;
+      try {
+        return throwFn.call(iterator, exception);
+      } catch (ex) {
+        exception = ex;
       }
     } else {
       IteratorClose(iterator, NormalCompletion());
     }
   }
-  // NOTE: The next step throws a TypeError to indicate that there was a
-  // protocol violation: iterator does not have a throw method.
-  throw new TypeError();
+  throw exception;
 }
 
 /**

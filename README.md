@@ -95,6 +95,12 @@ a reversed traversal are not included:
 
 ## New methods on Iterator.prototype not found on Array.prototype
 
+#### flatMap
+
+This method is very similar to `values().map(mapFn).flatten(1)`, however it
+asserts that `mapFn` always returns an *Iterable*, and flattens that returned
+value regardless of if it is *ConcatSpreadable*.
+
 #### flatten
 
 This method is similar to concat, however operates on an iterable of iterables

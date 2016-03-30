@@ -192,6 +192,30 @@ test('iterators can use every', () => {
   console.log(every2);
 });
 
+test('Iterator can flatMap', () => {
+  var someThis = { someThis: 'someThis' };
+  var flatMapper = createSpy(function (v) {
+    return [ v[0], 'is for ' + v.toLowerCase() ];
+  });
+  var iter = [ 'Apple', 'Banana', 'Cherry' ].values();
+  var flatMapped = iter.flatMap(flatMapper, someThis);
+
+  assertValues(flatMapped, [ 'A', 'is for apple', 'B', 'is for banana', 'C', 'is for cherry' ]);
+
+  assert.deepStrictEqual(flatMapper.calls, [
+    [ someThis, [ 'Apple', 0, iter ], [ 'A', 'is for apple' ] ],
+    [ someThis, [ 'Banana', 1, iter ], [ 'B', 'is for banana' ] ],
+    [ someThis, [ 'Cherry', 2, iter ], [ 'C', 'is for cherry' ] ],
+  ]);
+});
+
+test('Iterator.flatMap always iterates result', () => {
+  var iter = [ 'App', 'Bat', 'Cow' ].values();
+  var flatMapped = iter.flatMap(function (x) { return x; });
+
+  assertValues(flatMapped, [ 'A', 'p', 'p', 'B', 'a', 't', 'C', 'o', 'w' ]);
+});
+
 test('Iterator can be flattened', () => {
   var flattened = [['A'], [['B']], ['C']].values().flatten();
 

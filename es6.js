@@ -59,55 +59,36 @@ global.CreateMethodProperty = function CreateMethodProperty(O, P, V) {
 };
 
 // 7.3.9
-global.GetMethod = function GetMethod(O, P) {
-  // 1. Assert: Type(O) is Object.
-  if (Object(O) !== O) {
-    throw new TypeError();
-  }
-  // 2. Assert: IsPropertyKey(P) is true.
-  // 3. Let func be the result of calling the [[Get]] internal method of O passing P and O as the arguments.
-  // 4. ReturnIfAbrupt(func).
-  var func = O[P];
-  // 5. If func is either undefined or null, then return undefined.
+global.GetMethod = function GetMethod(V, P) {
+  // 1. Assert: IsPropertyKey(P) is true.
+  // 2. Let func be GetV (V, P)
+  var func = V[P];
+  // 3. If func is either undefined or null, then return undefined.
   if (func === undefined || func === null) {
     return undefined;
   }
-  // 6. If IsCallable(func) is false, then throw a TypeError exception.
+  // 4. If IsCallable(func) is false, then throw a TypeError exception.
   if (IsCallable(func) === false) {
     throw new TypeError();
   }
-  // 7. Return func.
+  // 5. Return func.
   return func;
 };
 
 // 7.4.1
 global.GetIterator = function GetIterator(obj, method) {
-  // 1. ReturnIfAbrupt(obj).
-  if (Object(obj) !== obj) {
-    throw new TypeError('Must provide Iterable Object.');
-  }
-  // 2. If method was not passed, then
+  // 1. If method was not passed, then
   if (arguments.length < 2) {
     // a. Let method be GetMethod(obj, @@iterator).
     method = GetMethod(obj, Symbol.iterator);
-    // b. ReturnIfAbrupt(method).
-    if (Object(method) !== method) {
-      throw new TypeError('Must implement @@iterator Symbol.');
-    }
   }
-  // 3. If IsCallable(method) is false, then throw a TypeError exception.
-  if (IsCallable(method) === false) {
-    throw new TypeError('method must be callable');
-  }
-  // 4. Let iterator be the result of calling the [[Call]] internal method of
-  //    method with obj as thisArgument and an empty List as argumentsList.
+  // 2. Let iterator be the Call(method, obj).
   var iterator = method.call(obj);
-  // 5. ReturnIfAbrupt(iterator).
-  // 6. If Type(iterator) is not Object, then throw a TypeError exception.
+  // 3. If Type(iterator) is not Object, then throw a TypeError exception.
   if (Object(iterator) !== iterator) {
     throw new TypeError('method must return an iterator');
   }
-  // 7. Return iterator.
+  // 4. Return iterator.
   return iterator;
 };
 
@@ -123,12 +104,11 @@ global.IteratorNext = function IteratorNext(iterator, value) {
     // a. Let result be Invoke(iterator, "next", «value»).
     result = iterator.next(value);
   }
-  // 3. ReturnIfAbrupt(result).
-  // 4. If Type(result) is not Object, throw a TypeError exception.
+  // 3. If Type(result) is not Object, throw a TypeError exception.
   if (Object(result) !== result) {
     throw new TypeError();
   }
-  // 5. Return result.
+  // 4. Return result.
   return result;
 };
 
