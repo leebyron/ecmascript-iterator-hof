@@ -15,7 +15,7 @@ adaptor pattern.
 
 ```js
 var myArray = [ 1, 2, 3 ]
-var myIter = Iterator(myArray) // true
+var myIter = Iterator(myArray)
 myIter instanceof Iterator // true
 myIter.next() // { value: 1, done: false }
 ```
