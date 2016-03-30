@@ -94,6 +94,32 @@ a reversed traversal are not included:
 
 ## New methods on Iterator.prototype not found on Array.prototype
 
+#### flatten
+
+This method is similar to concat, however operates on an iterable of iterables
+rather expecting each concatenated iterable as an argument.
+
+```js
+var deepValues = [ [ 'A' ], [ 'B' ], [ 'C' ] ]
+var flat = deepValues.values().flatten() // [ 'A', 'B', 'C' ]
+```
+
+Iterator's `.flatten()` optionally accepts `depth` as a positive integer, which
+limits how deep flatten will apply. If not provided (or any falsey value is
+provided) it defaults to `Infinity`.
+
+```js
+var veryDeep = [ [ 'A' ], [ [ 'B' ], [ [ 'C' ], [ [ 'D' ] ] ] ] ]
+var flatInf = veryDeep.values().flatten(0) // [ 'A', 'B', 'C', 'D' ]
+var flat1 = veryDeep.values().flatten(1) // [ 'A', [ 'B' ], [ [ 'C' ], [ [ 'D' ] ] ] ]
+var flat2 = veryDeep.values().flatten(2) // [ 'A', 'B', [ 'C' ], [ [ 'D' ] ] ]
+var flat3 = veryDeep.values().flatten(3) // [ 'A', 'B', 'C', [ 'D' ] ]
+```
+
+`iterator.flatten()`, like `iterator.concat()`, only expands those values which
+are *Spreadable*. This is determined very similarly to [`IsConcatSpreadable`](https://tc39.github.io/ecma262/#sec-isconcatspreadable), however the last step determines if the value is *Iterable*
+rather than *Array*.
+
 #### tee
 
 This method returns `n` independent iterators from this iterator by buffering

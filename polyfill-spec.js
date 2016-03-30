@@ -105,7 +105,7 @@ CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_con
   iterators[0] = O;
   for (var i = 0; i < arguments.length; i++) {
     var iterable = arguments[i];
-    if (IsIteratorConcatSpreadable(iterable) === false) {
+    if (IsConcatSpreadableIterable(iterable) === false) {
       iterable = [iterable];
     }
     iterators[i + 1] = GetIterator(iterable);
@@ -113,16 +113,16 @@ CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_con
   return CreateConcatIterator(iterators);
 });
 
-function IsIteratorConcatSpreadable(O) {
+function IsConcatSpreadableIterable(O) {
   if (Object(O) !== O) {
-    return false;
-  }
-  if (GetMethod(O, Symbol.iterator) === undefined) {
     return false;
   }
   var spreadable = O[Symbol.isConcatSpreadable];
   if (spreadable !== undefined) {
     return ToBoolean(spreadable);
+  }
+  if (GetMethod(O, Symbol.iterator) === undefined) {
+    return false;
   }
   return true;
 }
@@ -289,6 +289,9 @@ CreateMethodProperty(IteratorPrototype, 'flatten', function IteratorPrototype_fl
     depth = Infinity;
   } else {
     depth = ToInteger(arguments[0]);
+    if (depth < 0) {
+      throw new TypeError();
+    }
     if (depth === 0) {
       depth = Infinity;
     }
@@ -325,7 +328,7 @@ function FlattenIteratorNext() {
     }
     if (stack.length <= depth) {
       var value = IteratorValue(result);
-      if (IsIteratorConcatSpreadable(value) === true) {
+      if (IsConcatSpreadableIterable(value) === true) {
         var nextIterator = GetIterator(value);
         stack.push(nextIterator);
         continue;

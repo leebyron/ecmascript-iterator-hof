@@ -194,11 +194,45 @@ test('iterators can use every', () => {
 
 test('Iterator can be flattened', () => {
   var flattened = [['A'], [['B']], ['C']].values().flatten();
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
+
+  assertValues(flattened, [ 'A', 'B', 'C' ]);
+});
+
+test('Iterator does not flatten strings, despite being iterable', () => {
+  var flattened = [['Apple'], [['Banana']], ['Cherry']].values().flatten();
+
+  assertValues(flattened, [ 'Apple', 'Banana', 'Cherry' ]);
+});
+
+test('Iterator does not flatten non-spreadable iterables', () => {
+  var spreadFalse = {
+    [Symbol.isConcatSpreadable]: false,
+    [Symbol.iterator]() {
+      return [ 'Oh', 'No' ].values();
+    }
+  };
+
+  var spreadTrue = {
+    [Symbol.isConcatSpreadable]: true,
+    [Symbol.iterator]() {
+      return [ 'Ah', 'Yea' ].values();
+    }
+  };
+
+  var spreadUndef = {
+    [Symbol.iterator]() {
+      return [ 'What', 'Now' ].values();
+    }
+  };
+
+  var generator = function* () {
+    yield 'Many';
+    yield 'Values';
+  };
+
+  var flattened = [ spreadFalse, spreadTrue, spreadUndef, generator() ].values().flatten();
+
+  assertValues(flattened, [ spreadFalse, 'Ah', 'Yea', 'What', 'Now', 'Many', 'Values' ]);
 });
 
 test('Iterator can be "flat mapped" via composition', () => {
