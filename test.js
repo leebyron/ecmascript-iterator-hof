@@ -199,31 +199,43 @@ test('Iterators can be use some', () => {
 });
 
 test('Iterators can be use includes', () => {
-  var includes = ['A', 'B', 'C'].values().includes('B');
-  console.log(includes, true);
+  var includes1 = ['A', 'B', 'C'].values().includes('B');
+  assert.equal(includes1, true);
 
   var includes2 = ['A', 'B', 'C'].values().includes('D');
-  console.log(includes2, false);
+  assert.equal(includes2, false);
 
   var includes3 = [1, 2, NaN].values().includes(NaN);
-  console.log(includes3, true);
+  assert.equal(includes3, true);
 
   var includes4 = [2, 1, 0].values().includes(-0);
-  console.log(includes4, true);
+  assert.equal(includes4, true);
 });
 
 test('iterators can use every', () => {
-  var every = ['A', 'B', 'C'].values().every(function(x) {
-    console.log('every testing', x);
-    return x === 'B';
+  var someThis = { someThis: 'someThis' };
+  var pred1 = createSpy(function(x) {
+    return x !== 'B';
   });
-  console.log(every);
+  var iter1 = ['A', 'B', 'C'].values();
+  var every1 = iter1.every(pred1, someThis);
+  assert.equal(every1, false);
+  assert.deepStrictEqual(pred1.calls, [
+    [ someThis, [ 'A', 0, iter1 ], true ],
+    [ someThis, [ 'B', 1, iter1 ], false ],
+  ]);
 
-  var every2 = ['A', 'B', 'C'].values().every(function(x) {
-    console.log('every testing', x);
+  var pred2 = createSpy(function(x) {
     return x !== 'D';
   });
-  console.log(every2);
+  var iter2 = ['A', 'B', 'C'].values();
+  var every2 = iter2.every(pred2, someThis);
+  assert.equal(every2, true);
+  assert.deepStrictEqual(pred2.calls, [
+    [ someThis, [ 'A', 0, iter2 ], true ],
+    [ someThis, [ 'B', 1, iter2 ], true ],
+    [ someThis, [ 'C', 2, iter2 ], true ],
+  ]);
 });
 
 test('Iterator can flatMap', () => {
