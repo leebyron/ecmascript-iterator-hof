@@ -46,6 +46,15 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **transform**
  * **zip**
 
+TODO:
+
+ * find
+ * indexOf?
+ * findIndex?
+ * splice?
+ * join?
+
+
 These should mostly look familiar, they're almost all borrowed from the ES5
 additions to *Array.prototype*, most of which originally proposed in [Array#extras](https://blogs.msdn.microsoft.com/ie/2010/12/13/ecmascript-5-part-2-array-extras/).
 There are a few similarities and differences and a couple new methods:
