@@ -3,8 +3,14 @@
 // Micro-harness
 var assert = require('assert');
 function test(name, fn) {
-  console.log(name);
-  fn();
+  try {
+    fn();
+    console.log('\x1B[32m' + name + '\x1B[0m');
+  } catch (e) {
+    console.log('\x1B[31m' + name + '\x1B[0m');
+    console.log(e.stack || e.message || String(e));
+    process.nextTick(function () { process.exit(1); });
+  }
 }
 
 function assertValues(iterator, values) {
