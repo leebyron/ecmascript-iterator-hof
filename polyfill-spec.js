@@ -550,23 +550,16 @@ function MapIteratorTransform(result, index, iterator) {
  */
 CreateMethodProperty(IteratorPrototype, 'reduce', function IteratorPrototype_reduce( callbackFn /*[ , initialValue ]*/ ) {
   var O = Object(this);
-  if (arguments.length > 1) {
-    return ReduceIterator(O, callbackFn, initialValue);
-  }
-  return ReduceIterator(O, callbackFn);
-});
-
-function ReduceIterator(iterator, reducerFn, initialValue) {
-  if (IsCallable(reducerFn) === false) {
+  if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
   var result;
   var accumulator;
   var index = 0;
-  if (arguments.length > 2) {
-    accumulator = initialValue;
+  if (arguments.length > 1) {
+    accumulator = arguments[1];
   } else {
-    result = IteratorNext(iterator);
+    result = IteratorNext(O);
     if (IteratorComplete(result) === true) {
       throw new TypeError('Reduce of empty iterator with no initial value.');
     }
@@ -575,15 +568,15 @@ function ReduceIterator(iterator, reducerFn, initialValue) {
   }
 
   while (true) {
-    result = IteratorNext(iterator);
+    result = IteratorNext(O);
     if (IteratorComplete(result) === true) {
       return accumulator;
     }
     var value = IteratorValue(result);
-    accumulator = reducerFn(accumulator, value, index, iterator);
+    accumulator = callbackFn(accumulator, value, index, O);
     index += 1;
   }
-}
+});
 
 /**
  * Returns a new iterator which represents a slice of this iterator.

@@ -144,24 +144,58 @@ test('Iterators can be zipped', () => {
 });
 
 test('Iterators can be reduced', () => {
-  var reduced = ['A', 'B', 'C'].values().reduce(function(x, y) {
+  var reducer = createSpy(function(x, y) {
     return x + y;
   });
-  console.log(reduced);
+  var iter = ['A', 'B', 'C'].values();
+  var reduced = iter.reduce(reducer);
+
+  assert.equal(reduced, 'ABC');
+  assert.deepStrictEqual(reducer.calls, [
+    [ undefined, [ 'A', 'B', 1, iter ], 'AB' ],
+    [ undefined, [ 'AB', 'C', 2, iter ], 'ABC' ],
+  ]);
+});
+
+test('Iterators can be reduced with initial value', () => {
+  var reducer = createSpy(function(x, y) {
+    return x + y;
+  });
+  var iter = ['A', 'B', 'C'].values();
+  var reduced = iter.reduce(reducer, '~');
+
+  assert.equal(reduced, '~ABC');
+  assert.deepStrictEqual(reducer.calls, [
+    [ undefined, [ '~', 'A', 0, iter ], '~A' ],
+    [ undefined, [ '~A', 'B', 1, iter ], '~AB' ],
+    [ undefined, [ '~AB', 'C', 2, iter ], '~ABC' ],
+  ]);
 });
 
 test('Iterators can be use some', () => {
-  var some = ['A', 'B', 'C'].values().some(function(x) {
-    console.log('some testing', x);
+  var someThis = { someThis: 'someThis' };
+  var pred1 = createSpy(function(x) {
     return x === 'B';
   });
-  console.log(some);
+  var iter1 = ['A', 'B', 'C'].values();
+  var some1 = iter1.some(pred1, someThis);
+  assert.equal(some1, true);
+  assert.deepStrictEqual(pred1.calls, [
+    [ someThis, [ 'A', 0, iter1 ], false ],
+    [ someThis, [ 'B', 1, iter1 ], true ],
+  ]);
 
-  var some2 = ['A', 'B', 'C'].values().some(function(x) {
-    console.log('some testing', x);
+  var pred2 = createSpy(function(x) {
     return x === 'D';
   });
-  console.log(some2);
+  var iter2 = ['A', 'B', 'C'].values();
+  var some2 = iter2.some(pred2, someThis);
+  assert.equal(some2, false);
+  assert.deepStrictEqual(pred2.calls, [
+    [ someThis, [ 'A', 0, iter2 ], false ],
+    [ someThis, [ 'B', 1, iter2 ], false ],
+    [ someThis, [ 'C', 2, iter2 ], false ],
+  ]);
 });
 
 test('Iterators can be use includes', () => {
