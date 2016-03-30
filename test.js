@@ -81,10 +81,24 @@ test('Iterator can be filtered', () => {
 });
 
 test('Iterator can be filtered by index', () => {
-  var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x, index) {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['A', 'B', 'C', 'D', 'E', 'F'].values();
+  var filterFn = createSpy(function (x, index) {
     return index % 2 === 0;
   });
-  assertValues(mapped, [ 'A', 'C', 'E' ]);
+
+  var filtered = iter.filter(filterFn, someThis);
+
+  assertValues(filtered, [ 'A', 'C', 'E' ]);
+
+  assert.deepStrictEqual(filterFn.calls, [
+    [ someThis, [ 'A', 0, iter ], true ],
+    [ someThis, [ 'B', 1, iter ], false ],
+    [ someThis, [ 'C', 2, iter ], true ],
+    [ someThis, [ 'D', 3, iter ], false ],
+    [ someThis, [ 'E', 4, iter ], true ],
+    [ someThis, [ 'F', 5, iter ], false ],
+  ]);
 });
 
 test('Iterators can be zipped', () => {
