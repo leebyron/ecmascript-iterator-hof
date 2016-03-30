@@ -262,6 +262,23 @@ test('Iterator.flatMap always iterates result', () => {
   assertValues(flatMapped, [ 'A', 'p', 'p', 'B', 'a', 't', 'C', 'o', 'w' ]);
 });
 
+test('flatMap useful with generators', () => {
+
+  var initial = function *(x) {
+    yield 'Apple';
+    yield 'Banana';
+    yield 'Cherry';
+  };
+
+  var flatMapped = initial().flatMap(function *(x) {
+    yield x.toUpperCase();
+    yield x.toLowerCase();
+  });
+
+  assertValues(flatMapped, [ 'APPLE', 'apple', 'BANANA', 'banana', 'CHERRY', 'cherry' ]);
+
+});
+
 test('Iterator can be flattened', () => {
   var flattened = [['A'], [['B']], ['C']].values().flatten();
 
