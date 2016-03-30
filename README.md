@@ -36,6 +36,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **includes**
  * **every**
  * **filter**
+ * **find**
  * **flatten**
  * **forEach**
  * **map**
@@ -48,7 +49,6 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
 
 TODO:
 
- * find
  * indexOf?
  * findIndex?
  * splice?

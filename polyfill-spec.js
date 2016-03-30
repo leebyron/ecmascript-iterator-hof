@@ -254,6 +254,30 @@ function FilterIteratorTransform(result, index, iterator) {
 }
 
 /**
+ * Returns an if the search-element in the iterated values.
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'find', function IteratorPrototype_find( callbackFn /*[ , thisArg ]*/ ) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var index = 0;
+  while (true) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return;
+    }
+    var value = IteratorValue(result);
+    if (ToBoolean(callbackFn.call(T, value, index, O)) === true) {
+      return value;
+    }
+    index += 1;
+  }
+});
+
+/**
  * Flattens an iterator of (concat-spreadable) iterables, returning an iterator
  * of flattened values. Accepts a maximum depth to flatten to, which must be >0
  * and defaults to +Infinity.

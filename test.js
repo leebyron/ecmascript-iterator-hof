@@ -118,6 +118,23 @@ test('Iterator can be filtered by index', () => {
   ]);
 });
 
+test('Values can be found in an iterator', () => {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['Apple', 'Banana', 'Cherry', 'Durian'].values();
+  var findFn = createSpy(function (x, index) {
+    return x.indexOf('na') !== -1;
+  });
+
+  var found = iter.find(findFn, someThis);
+
+  assert.equal(found, 'Banana');
+
+  assert.deepStrictEqual(findFn.calls, [
+    [ someThis, [ 'Apple', 0, iter ], false ],
+    [ someThis, [ 'Banana', 1, iter ], true ],
+  ]);
+});
+
 test('Iterators can be zipped', () => {
   var a1 = ['A', 'B', 'C'];
   var a2 = ['X', 'Y', 'Z'];
