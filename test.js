@@ -306,53 +306,33 @@ test('Iterator does not flatten non-spreadable iterables', () => {
 });
 
 test('Iterator can be "flat mapped" via composition', () => {
-  var flattened = ['A', 'B', 'C'].values().map(function (v) {
+  var mapper = createSpy(function (v) {
     return [ v, v.toLowerCase(), [v] ];
-  }).flatten(1);
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
-  console.log(flattened.next());
+  });
+  var iter = ['A', 'B', 'C'].values();
+  var flattened = iter.map(mapper).flatten(1);
+
+  assertValues(flattened, [ 'A', 'a', [ 'A' ], 'B', 'b', [ 'B' ], 'C', 'c', [ 'C' ], ]);
+  assert.deepStrictEqual(mapper.calls, [
+    [ undefined, [ 'A', 0, iter ], [ 'A', 'a', [ 'A' ] ] ],
+    [ undefined, [ 'B', 1, iter ], [ 'B', 'b', [ 'B' ] ] ],
+    [ undefined, [ 'C', 2, iter ], [ 'C', 'c', [ 'C' ] ] ],
+  ]);
 });
 
 test('iterators can be concatted', () => {
-  var a = ['A', 'B', 'C'];
-  var concatted = a.values().concat(a, a.values(), a.values());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
+  var a = ['A', 'B'];
+  var concatted = a.values().concat(a, a.keys(), a.entries());
+  assertValues(concatted, [ 'A', 'B', 'A', 'B', 0, 1, [ 0, 'A' ], [ 1, 'B' ] ]);
 });
 
 test('concat respects spreadable', () => {
-  var a = ['A', 'B', 'C'];
-  var noSpread = ['D', 'E', 'F'];
+  var a = [ 'A', 'B', 'C' ];
+  var noSpread = [ 'D', 'E', 'F' ];
   noSpread[Symbol.isConcatSpreadable] = false;
-  var concatted = a.values().concat('XYZ', noSpread);
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
-  console.log(concatted.next());
+  var concatted = a.values().concat('XYZ', [ 'Q', 'R' ], noSpread);
+
+  assertValues(concatted, [ 'A', 'B', 'C', 'XYZ', 'Q', 'R', [ 'D', 'E', 'F' ] ]);
 });
 
 test('iterator can be sliced', () => {
