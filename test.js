@@ -46,21 +46,38 @@ test('Iterator can be mapped', () => {
 });
 
 test('Iterator can forEach', () => {
+  var someThis = { someThis: 'someThis' };
   var iter = [ 'A', 'B', 'C' ].values();
   var spy = createSpy();
-  iter.forEach(spy);
+
+  iter.forEach(spy, someThis);
+
   assert.deepStrictEqual(spy.calls, [
-    [ undefined, [ 'A', 0, iter ], undefined ],
-    [ undefined, [ 'B', 1, iter ], undefined ],
-    [ undefined, [ 'C', 2, iter ], undefined ],
+    [ someThis, [ 'A', 0, iter ], undefined ],
+    [ someThis, [ 'B', 1, iter ], undefined ],
+    [ someThis, [ 'C', 2, iter ], undefined ],
   ]);
 });
 
 test('Iterator can be filtered', () => {
-  var mapped = ['A', 'B', 'C', 'D', 'E', 'F'].values().filter(function (x) {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['A', 'B', 'C', 'D', 'E', 'F'].values();
+  var filterFn = createSpy(function (x) {
     return x.charCodeAt(0) % 2 === 0;
   });
-  assertValues(mapped, [ 'B', 'D', 'F' ]);
+
+  var filtered = iter.filter(filterFn, someThis);
+
+  assertValues(filtered, [ 'B', 'D', 'F' ]);
+
+  assert.deepStrictEqual(filterFn.calls, [
+    [ someThis, [ 'A', 0, iter ], false ],
+    [ someThis, [ 'B', 1, iter ], true ],
+    [ someThis, [ 'C', 2, iter ], false ],
+    [ someThis, [ 'D', 3, iter ], true ],
+    [ someThis, [ 'E', 4, iter ], false ],
+    [ someThis, [ 'F', 5, iter ], true ],
+  ]);
 });
 
 test('Iterator can be filtered by index', () => {

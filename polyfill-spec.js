@@ -242,12 +242,12 @@ CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_fil
   return CreateTransformedIterator(O, FilterIteratorTransform, context);
 });
 
-function FilterIteratorTransform(result, index) {
+function FilterIteratorTransform(result, index, iterator) {
   var O = Object(this);
   var callbackFn = O['[[FilterFunction]]'];
   var T = O['[[FilterContext]]'];
   var value = IteratorValue(result);
-  if (ToBoolean(callbackFn.call(T, value, index, O)) === false) {
+  if (ToBoolean(callbackFn.call(T, value, index, iterator)) === false) {
     return undefined;
   }
   return result;
@@ -384,12 +384,12 @@ CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( c
   return CreateTransformedIterator(O, MapIteratorTransform, context);
 });
 
-function MapIteratorTransform(result, index) {
+function MapIteratorTransform(result, index, iterator) {
   var O = Object(this);
   var callbackFn = O['[[MapFunction]]'];
   var T = O['[[MapContext]]'];
   var value = IteratorValue(result);
-  var mappedValue = callbackFn.call(T, value, index, O);
+  var mappedValue = callbackFn.call(T, value, index, iterator);
   return CreateIterResultObject(mappedValue, false);
 }
 
@@ -653,7 +653,7 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
       return result;
     }
     var index = O['[[TransformIndex]]'];
-    result = transformer.call(context, result, index, O);
+    result = transformer.call(context, result, index, iterator);
     O['[[TransformIndex]]'] = index + 1;
     if (result === undefined || result === null) {
       result = IteratorNext(iterator);
