@@ -425,7 +425,7 @@ test('user-land iterators can use the adaptor to get IteratorPrototype', () => {
   ]);
 });
 
-test('GENERATORS', () => {
+test('Generators can be mapped and catch errors', () => {
   function* fib() {
     var i = 1;
     var j = 1;
@@ -437,19 +437,44 @@ test('GENERATORS', () => {
         yield i;
       }
     } catch (e) {
-      console.log('caught', e);
-      return 'done';
+      return 'done:' + e.message;
     }
   }
 
   var mapped = fib().map(function (x) { return 'fib:' + x; });
 
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.next());
-  console.log(mapped.throw(new Error('wat')));
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: 'fib:1', done: false }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: 'fib:2', done: false }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: 'fib:3', done: false }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: 'fib:5', done: false }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: 'fib:8', done: false }
+  );
+  assert.deepStrictEqual(
+    mapped.throw(new Error('wat')),
+    { value: 'done:wat', done: true }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: undefined, done: true }
+  );
+  assert.deepStrictEqual(
+    mapped.next(),
+    { value: undefined, done: true }
+  );
 });
 
 test('Transform can be used to build interesting things:', () => {
@@ -475,10 +500,10 @@ test('Transform can be used to build interesting things:', () => {
   }
 
   var iter = reductions([1,2,3,4], (a, v) => a + v);
-  console.log(iter.next());
-  console.log(iter.next());
-  console.log(iter.next());
-  console.log(iter.next());
-  console.log(iter.next());
-
+  assert.deepStrictEqual(iter.next(), { value: 1, done: false });
+  assert.deepStrictEqual(iter.next(), { value: 3, done: false });
+  assert.deepStrictEqual(iter.next(), { value: 6, done: false });
+  assert.deepStrictEqual(iter.next(), { value: 10, done: false });
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
 });
