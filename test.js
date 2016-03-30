@@ -2,14 +2,25 @@
 
 // Micro-harness
 var assert = require('assert');
+
+var failures;
 function test(name, fn) {
   try {
     fn();
     console.log('\x1B[32m' + name + '\x1B[0m');
   } catch (e) {
-    console.log('\x1B[31m' + name + '\x1B[0m');
-    console.log(e.stack || e.message || String(e));
-    process.nextTick(function () { process.exit(1); });
+    if (failures) {
+      failures.push([ name, e ]);
+    } else {
+      failures = [[ name, e ]];
+      process.nextTick(function () {
+        failures.forEach(function (pair) {
+          console.log('\x1B[31m' + pair[0] + '\x1B[0m');
+          console.log(pair[1].stack || pair[1].message || String(pair[1]));
+        });
+        process.exit(1);
+      });
+    }
   }
 }
 
@@ -111,11 +122,8 @@ test('Iterators can be zipped', () => {
   var a1 = ['A', 'B', 'C'];
   var a2 = ['X', 'Y', 'Z'];
   var zipped = a1.values().zip(a2);
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
-  console.log(zipped.next());
+
+  assertValues(zipped, [ ['A', 'X'], ['B', 'Y'], ['C', 'Z'] ]);
 });
 
 test('Iterators can be reduced', () => {
