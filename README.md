@@ -162,3 +162,4 @@ node examples.js
  * Test and double check all return/throw methods for appropriate behavior
  * Test and double check throwing from generator functions performs correctly
  * Can some of the `throw` and `return` impls be generalized?
+ * Can we illustrate behavior of each method via generator functions?
