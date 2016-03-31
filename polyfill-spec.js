@@ -194,7 +194,7 @@ CreateMethodProperty(ConcatedIteratorPrototype, 'throw', function throw_( except
  * Returns true if the search-element in the iterated values.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'includes', function IteratorPrototype_includes( searchElement ) {
+CreateMethodProperty(IteratorPrototype, 'includes', function includes( searchElement ) {
   var O = Object(this);
   while (true) {
     var result = IteratorNext(O);
@@ -212,7 +212,7 @@ CreateMethodProperty(IteratorPrototype, 'includes', function IteratorPrototype_i
  * Returns true if all items in the list pass the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_every( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'every', function every( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -239,7 +239,7 @@ CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_ever
  * values of this iterator. Returns a new iterator.
  * Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_filter( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'filter', function filter( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -329,7 +329,7 @@ function FilterIteratorThrow(exception) {
  * Returns an if the search-element in the iterated values.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'find', function IteratorPrototype_find( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'find', function find( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -354,7 +354,7 @@ CreateMethodProperty(IteratorPrototype, 'find', function IteratorPrototype_find(
  * with the transforming callbackFn, asserting an iterator is returned, and
  * flattening that response into the new iterator's output.
  */
-CreateMethodProperty(IteratorPrototype, 'flatMap', function IteratorPrototype_flatMap( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'flatMap', function flatMap( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
   return CreateFlatMappedIterator(O, callbackFn, thisArg);
@@ -482,7 +482,7 @@ function FlatMappedIteratorThrow(exception) {
  * of flattened values. Accepts a maximum depth to flatten to, which must be >0
  * and defaults to +Infinity.
  */
-CreateMethodProperty(IteratorPrototype, 'flatten', function IteratorPrototype_flatten( /* [ depth ] */ ) {
+CreateMethodProperty(IteratorPrototype, 'flatten', function flatten( /* [ depth ] */ ) {
   var O = Object(this);
   var depth;
   if (arguments.length === 0) {
@@ -571,7 +571,7 @@ function FlattenIteratorThrow(exception) {
 /**
  * Equivalent to a for-of loop. Does not return any value.
  */
-CreateMethodProperty(IteratorPrototype, 'forEach', function IteratorPrototype_forEach( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'forEach', function forEach( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -594,7 +594,7 @@ CreateMethodProperty(IteratorPrototype, 'forEach', function IteratorPrototype_fo
  * Uses a mapper callbackFn to map from original values to new values.
  * Returns a new iterator. Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'map', function map( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -681,7 +681,7 @@ function MapIteratorThrow(exception) {
  * Reduces this iterator with a reducing callbackFn to a single value.
  * Consumes this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'reduce', function IteratorPrototype_reduce( callbackFn /*[ , initialValue ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'reduce', function reduce( callbackFn /*[ , initialValue ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -714,7 +714,7 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function IteratorPrototype_red
 /**
  * Returns a new iterator which represents a slice of this iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slice( start, end ) {
+CreateMethodProperty(IteratorPrototype, 'slice', function slice( start, end ) {
   var O = Object(this);
   start = ToInteger(start);
   if (start < 0) {
@@ -819,7 +819,7 @@ function SliceIteratorThrow(exception) {
  * Returns true if any item in the list passes the predicate.
  * Consumes the iterable.
  */
-CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some( callbackFn /*[ , thisArg ]*/ ) {
+CreateMethodProperty(IteratorPrototype, 'some', function some( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
   if (IsCallable(callbackFn) === false) {
     throw new TypeError();
@@ -841,7 +841,7 @@ CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(
   }
 });
 
-CreateMethodProperty(IteratorPrototype, 'tee', function IteratorPrototype_tee( amount ) {
+CreateMethodProperty(IteratorPrototype, 'tee', function tee( amount ) {
   var O = Object(this);
   if (amount === undefined) {
     amount = 2;
@@ -925,7 +925,7 @@ function TeeIteratorReturn(value) {
  * yields IteratorResults where the value property contains an array tuple of
  * the values of each iterator.
  */
-CreateMethodProperty(IteratorPrototype, 'zip', function IteratorPrototype_zip( /* ...iterables */ ) {
+CreateMethodProperty(IteratorPrototype, 'zip', function zip( /* ...iterables */ ) {
   var O = Object(this);
   var iterators = Array(arguments.length + 1);
   iterators[0] = O;
