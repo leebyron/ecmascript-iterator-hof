@@ -350,11 +350,11 @@ CreateMethodProperty(IteratorPrototype, 'flatMap', function IteratorPrototype_fl
   return CreateFlatMappedIterator(O, callbackFn, thisArg);
 });
 
-function CreateFlatMappedIterator(originalIterator, transformer, context) {
+function CreateFlatMappedIterator(originalIterator, callbackFn, context) {
   if (Object(originalIterator) !== originalIterator) {
     throw new TypeError();
   }
-  if (IsCallable(transformer) === false) {
+  if (IsCallable(callbackFn) === false) {
     throw new TypeError();
   }
   var iterator = ObjectCreate(
@@ -362,7 +362,7 @@ function CreateFlatMappedIterator(originalIterator, transformer, context) {
     ['[[Iterator]]', '[[FlatMapFunction]]', '[[FlatMapContext]]', '[[FlatMapIndex]]', '[[FlatMapIterator]]']
   );
   iterator['[[Iterator]]'] = originalIterator;
-  iterator['[[FlatMapFunction]]'] = transformer;
+  iterator['[[FlatMapFunction]]'] = callbackFn;
   iterator['[[FlatMapContext]]'] = context;
   iterator['[[FlatMapIndex]]'] = 0;
   iterator['[[FlatMapIterator]]'] = null;
@@ -909,126 +909,6 @@ function TeeIteratorReturn(value) {
   }
   return CreateIterResultObject(value, true);
 }
-
-/**
- * Transforms this iterator into a new iterator by mapping each IteratorResult
- * with the transforming callbackFn. Consumes this iterator.
- *
- * callbackFn should accept one argument *result*, the IteratorResult returned
- * by this iterator's `next` method. It should return either an IteratorResult
- * or undefined/null. This affords a transformer a few outcomes:
- *
- *  * Yield the original *result* unchanged - simply return *result*
- *  * Map the original value to a new value - return a new IteratorResult with
- *    the desired value.
- *  * Filter out the original value - return undefined or null
- *  * End iteration early - return IteratorResult where *done* is **true**.
- *
- */
-CreateMethodProperty(IteratorPrototype, 'transform', function IteratorPrototype_transform( callbackFn /*[ , thisArg ]*/ ) {
-  var O = Object(this);
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  return CreateTransformedIterator(O, callbackFn, thisArg);
-});
-
-function CreateTransformedIterator(originalIterator, transformer, context) {
-  if (Object(originalIterator) !== originalIterator) {
-    throw new TypeError();
-  }
-  if (IsCallable(transformer) === false) {
-    throw new TypeError();
-  }
-  var iterator = ObjectCreate(
-    IteratorPrototype,
-    ['[[Iterator]]', '[[TransformFunction]]', '[[TransformContext]]', '[[TransformIndex]]']
-  );
-  iterator['[[Iterator]]'] = originalIterator;
-  iterator['[[TransformFunction]]'] = transformer;
-  iterator['[[TransformContext]]'] = context;
-  iterator['[[TransformIndex]]'] = 0;
-
-  CreateMethodProperty(iterator, 'next', TransformedIteratorNext);
-  var returnFn = originalIterator['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', TransformedIteratorReturn);
-  }
-  var throwFn = originalIterator['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', TransformedIteratorThrow);
-  }
-  return iterator;
-}
-
-function TransformedIteratorNext( /*[ value ]*/ ) {
-  var O = Object(this);
-  var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    return CreateIterResultObject(undefined, true);
-  }
-  var transformer = O['[[TransformFunction]]'];
-  var context = O['[[TransformContext]]'];
-  var result;
-  if (arguments.length > 0) {
-    var value = arguments[0];
-    result = IteratorNext(iterator, value);
-  } else {
-    result = IteratorNext(iterator);
-  }
-  while (true) {
-    if (IteratorComplete(result) === true) {
-      O['[[Iterator]]'] = undefined;
-      O['[[TransformFunction]]'] = undefined;
-      O['[[TransformContext]]'] = undefined;
-      O['[[TransformIndex]]'] = undefined;
-      return result;
-    }
-    var index = O['[[TransformIndex]]'];
-    result = transformer.call(context, result, index, iterator);
-    O['[[TransformIndex]]'] = index + 1;
-    if (result === undefined || result === null) {
-      result = IteratorNext(iterator);
-      continue;
-    }
-    if (Object(result) !== result) {
-      throw new TypeError();
-    }
-    if (IteratorComplete(result) === true) {
-      O['[[Iterator]]'] = undefined;
-      O['[[TransformFunction]]'] = undefined;
-      O['[[TransformContext]]'] = undefined;
-      O['[[TransformIndex]]'] = undefined;
-      IteratorClose(iterator, NormalCompletion());
-    }
-    return result;
-  }
-}
-
-function TransformedIteratorReturn(value) {
-  var O = Object(this);
-  var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    return CreateIterResultObject(value, true);
-  }
-  var returnFn = GetMethod(iterator, 'return');
-  if (IsCallable(returnFn) === false) {
-    throw new TypeError();
-  }
-  return returnFn.call(iterator, value);
-}
-
-function TransformedIteratorThrow(exception) {
-  var O = Object(this);
-  var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    throw exception;
-  }
-  var throwFn = GetMethod(iterator, 'throw');
-  if (IsCallable(throwFn) === false) {
-    throw new TypeError();
-  }
-  return throwFn.call(iterator, exception);
-}
-
 
 /**
  * "zips" other iterables with this iterator, returning a new iterator which

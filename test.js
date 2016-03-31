@@ -493,34 +493,3 @@ test('Generators can be mapped and catch errors', () => {
     { value: undefined, done: true }
   );
 });
-
-test('Transform can be used to build interesting things:', () => {
-
-  function reductions(iterable, reducer, initial) {
-    var accum;
-    var needsInitial = false;
-    if (arguments.length >= 3) {
-      accum = initial;
-    } else {
-      needsInitial = true;
-    }
-    return Iterator(iterable).transform(function (result) {
-      if (needsInitial) {
-        needsInitial = false;
-        accum = result.value;
-        return result;
-      } else {
-        accum = reducer(accum, result.value);
-        return { value: accum , done: false };
-      }
-    });
-  }
-
-  var iter = reductions([1,2,3,4], (a, v) => a + v);
-  assert.deepStrictEqual(iter.next(), { value: 1, done: false });
-  assert.deepStrictEqual(iter.next(), { value: 3, done: false });
-  assert.deepStrictEqual(iter.next(), { value: 6, done: false });
-  assert.deepStrictEqual(iter.next(), { value: 10, done: false });
-  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
-  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
-});

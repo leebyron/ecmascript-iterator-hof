@@ -45,7 +45,6 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **slice**
  * **some**
  * **tee**
- * **transform**
  * **zip**
 
 TODO:
@@ -133,48 +132,6 @@ This method returns `n` independent iterators from this iterator by buffering
 the original iterator.
 
 This same method can be found in Python's [itertools](https://docs.python.org/2/library/itertools.html#itertools.tee).
-
-
-#### transform
-
-This method is the common basis for operations which return a new iterator.
-*map*, *filter*, and *zip* are defined in terms of it. It allows for
-simultaneous mapping and filtering as well as ending iteration early.
-
-The iterators it returns allow for chaining of the **return**, and
-**throw** methods.
-
-```js
-var myArray = [ 'A', 'B', 'C', 'D', 'E' ];
-var transformed = myArray.values().transform(function (result, index) {
-  // result is an IteratorResult `{ value, done }`
-
-  // Many operations can be done:
-  switch (index) {
-
-  // Pass the result through:
-  case 0:
-    return result;
-
-  // Skip a result (filter):
-  case 1:
-    return null;
-
-  // Pass a different result (map):
-  case 2:
-    return { value: result.value + result.value, done: false };
-
-  // End iteration early:
-  case 3:
-    return { value: undefined, done: true };
-
-  }
-});
-
-// 'A'
-// 'CC'
-```
-
 
 #### zip
 
