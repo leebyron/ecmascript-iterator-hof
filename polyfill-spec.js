@@ -225,8 +225,8 @@ CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_ever
 });
 
 /**
- * A specific `transform` which uses a predicate callbackFn returns true to keep
- * values or false to skip values of this iterator. Returns a new iterator.
+ * Uses a predicate callbackFn returns true to keep values or false to skip
+ * values of this iterator. Returns a new iterator.
  * Consumes this iterator.
  */
 CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_filter( callbackFn /*[ , thisArg ]*/ ) {
@@ -235,22 +235,84 @@ CreateMethodProperty(IteratorPrototype, 'filter', function IteratorPrototype_fil
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
-  var context = {
-    '[[FilterFunction]]': callbackFn,
-    '[[FilterContext]]': T
-  };
-  return CreateTransformedIterator(O, FilterIteratorTransform, context);
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Iterator]]', '[[Callback]]', '[[ThisArg]]', '[[NextIndex]]']
+  );
+  iterator['[[Iterator]]'] = O;
+  iterator['[[Callback]]'] = callbackFn;
+  iterator['[[ThisArg]]'] = T;
+  iterator['[[NextIndex]]'] = 0;
+
+  CreateMethodProperty(iterator, 'next', FilterIteratorNext);
+  var returnFn = O['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', FilterIteratorReturn);
+  }
+  var throwFn = O['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', FilterIteratorThrow);
+  }
+  return iterator;
 });
 
-function FilterIteratorTransform(result, index, iterator) {
+function FilterIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
-  var callbackFn = O['[[FilterFunction]]'];
-  var T = O['[[FilterContext]]'];
-  var value = IteratorValue(result);
-  if (Boolean(callbackFn.call(T, value, index, iterator)) === false) {
-    return undefined;
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
   }
-  return result;
+  var callbackFn = O['[[Callback]]'];
+  var T = O['[[ThisArg]]'];
+  while (true) {
+    var result;
+    if (arguments.length > 0) {
+      var value = arguments[0];
+      result = IteratorNext(iterator, value);
+    } else {
+      result = IteratorNext(iterator);
+    }
+    if (IteratorComplete(result) === true) {
+      O['[[Iterator]]'] = undefined;
+      O['[[Callback]]'] = undefined;
+      O['[[ThisArg]]'] = undefined;
+      O['[[NextIndex]]'] = undefined;
+      return result;
+    }
+    var iterValue = IteratorValue(result);
+    var index = O['[[NextIndex]]'];
+    var selected = callbackFn.call(T, iterValue, index, iterator);
+    O['[[NextIndex]]'] = index + 1;
+    if (Boolean(selected) === true) {
+      return result;
+    }
+  }
+}
+
+function FilterIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator, value);
+}
+
+function FilterIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
 }
 
 /**
