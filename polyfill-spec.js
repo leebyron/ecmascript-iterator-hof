@@ -706,40 +706,103 @@ CreateMethodProperty(IteratorPrototype, 'reduce', function IteratorPrototype_red
  */
 CreateMethodProperty(IteratorPrototype, 'slice', function IteratorPrototype_slice( start, end ) {
   var O = Object(this);
-  var relativeStart = ToInteger(start);
-  if (relativeStart < 0) {
+  start = ToInteger(start);
+  if (start < 0) {
     throw new TypeError('Slice start must not be negative.');
   }
-  var relativeEnd;
   if (end === undefined) {
-    relativeEnd = Infinity;
+    end = Infinity;
   } else {
-    relativeEnd = ToInteger(end);
-    if (relativeEnd < 0) {
+    end = ToInteger(end);
+    if (end < 0) {
       throw new TypeError('Slice end must not be negative.');
     }
   }
-  var context = {
-    '[[Start]]': relativeStart,
-    '[[End]]': relativeEnd,
-    '[[Count]]': 0
-  };
-  return CreateTransformedIterator(O, SliceIteratorTransform, context);
+
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Iterator]]', '[[Start]]', '[[End]]', '[[NextIndex]]']
+  );
+  iterator['[[Iterator]]'] = O;
+  iterator['[[Start]]'] = start;
+  iterator['[[End]]'] = end;
+  iterator['[[NextIndex]]'] = 0;
+
+  CreateMethodProperty(iterator, 'next', SliceIteratorNext);
+  var returnFn = O['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', SliceIteratorReturn);
+  }
+  var throwFn = O['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', SliceIteratorThrow);
+  }
+  return iterator;
 });
 
-function SliceIteratorTransform(result) {
+function SliceIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
-  var start = O['[[Start]]'];
-  var end = O['[[End]]'];
-  var count = O['[[Count]]'];
-  O['[[Count]]'] = count + 1;
-  if (count < start) {
-    return undefined;
-  }
-  if (count === end) {
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
     return CreateIterResultObject(undefined, true);
   }
-  return result;
+  var start = O['[[Start]]'];
+  var end = O['[[End]]'];
+
+  while (true) {
+    var index = O['[[NextIndex]]'];
+
+    if (index >= end) {
+      O['[[Iterator]]'] = undefined;
+      IteratorClose(iterator, NormalCompletion());
+      return CreateIterResultObject(value, true);
+    }
+
+    var result;
+    if (arguments.length > 0 && index >= start) {
+      var value = arguments[0];
+      result = IteratorNext(iterator, value);
+    } else {
+      result = IteratorNext(iterator);
+    }
+
+    if (IteratorComplete(result) === true) {
+      O['[[Iterator]]'] = undefined;
+      return result;
+    }
+
+    O['[[NextIndex]]'] = index + 1;
+
+    if (index >= start) {
+      return result;
+    }
+  }
+}
+
+function SliceIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator, value);
+}
+
+function SliceIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
 }
 
 /**
@@ -837,7 +900,7 @@ function TeeIteratorReturn(value) {
     var count = buffer['[[Count]]'];
     if (count === 1) {
       var iterator = O['[[Iterator]]'];
-      IteratorClose(iterator); // TODO note why no completion record?
+      IteratorClose(iterator, NormalCompletion());
     }
     buffer['[[Count]]'] = count - 1;
     O['[[Iterator]]'] = undefined;
