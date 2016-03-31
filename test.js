@@ -413,6 +413,32 @@ test('concat throws from unstarted state leads to completed state', () => {
   assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
 });
 
+test('concat throws from completed state', () => {
+  function* genABC() {
+    try {
+      yield 'A';
+      yield 'B';
+      yield 'C';
+    } catch (error) {
+      yield 'Err:' + error;
+    }
+  }
+
+  var iter = genABC().concat(genABC(), genABC());
+
+  // Consume iterator.
+  assertValues(iter, [ 'A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C' ]);
+
+  var error = new Error();
+  assert.throws(function () {
+    iter.throw(error);
+  }, function (caught) {
+    return caught === error;
+  });
+
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
+});
+
 test('iterator can be sliced', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(1, 3);
