@@ -160,3 +160,4 @@ node examples.js
  * Should transforms operate on "completion value"?
  * Prototypes vs method assignments
  * Test and double check all return/throw methods for appropriate behavior
+ * Test and double check throwing from generator functions performs correctly

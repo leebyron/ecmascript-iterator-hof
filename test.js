@@ -352,6 +352,67 @@ test('concat respects spreadable', () => {
   assertValues(concatted, [ 'A', 'B', 'C', 'XYZ', 'Q', 'R', [ 'D', 'E', 'F' ] ]);
 });
 
+test('concat supports generators', () => {
+  function* genABC() {
+    yield 'A';
+    yield 'B';
+    yield 'C';
+  }
+
+  var iter = genABC().concat(genABC(), genABC());
+
+  assertValues(iter, [ 'A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C' ]);
+});
+
+test('concat supports throw', () => {
+  function* genABC() {
+    try {
+      yield 'A';
+      yield 'B';
+      yield 'C';
+    } catch (error) {
+      yield 'Err:' + error;
+    }
+  }
+
+  var iter = genABC().concat(genABC(), genABC());
+
+  assert.deepStrictEqual(iter.next(), { value: 'A', done: false });
+  assert.deepStrictEqual(iter.next(), { value: 'B', done: false });
+  assert.deepStrictEqual(iter.next(), { value: 'C', done: false });
+  assert.deepStrictEqual(iter.throw('X'), { value: 'Err:X', done: false });
+  assert.deepStrictEqual(iter.next(), { value: 'A', done: false });
+  assert.deepStrictEqual(iter.next(), { value: 'B', done: false });
+  assert.deepStrictEqual(iter.throw('X'), { value: 'Err:X', done: false });
+  assert.deepStrictEqual(iter.next(), { value: 'A', done: false });
+  assert.deepStrictEqual(iter.throw('X'), { value: 'Err:X', done: false });
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
+});
+
+test('concat throws from unstarted state leads to completed state', () => {
+  function* genABC() {
+    try {
+      yield 'A';
+      yield 'B';
+      yield 'C';
+    } catch (error) {
+      yield 'Err:' + error;
+    }
+  }
+
+  var iter = genABC().concat(genABC(), genABC());
+
+  var error = new Error();
+  assert.throws(function () {
+    iter.throw(error);
+  }, function (caught) {
+    return caught === error;
+  });
+
+  assert.deepStrictEqual(iter.next(), { value: undefined, done: true });
+});
+
 test('iterator can be sliced', () => {
   var a = ['A', 'B', 'C', 'D', 'E', 'F'];
   var sliced = a.values().slice(1, 3);

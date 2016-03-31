@@ -81,21 +81,10 @@ function IsSomeReturnable(iterators) {
   return false;
 }
 
-CreateMethodProperty(IteratorPrototype, 'concat', function IteratorPrototype_concat( /* ...iterables */ ) {
+CreateMethodProperty(IteratorPrototype, 'concat', function concat( /* ...iterables */ ) {
   var O = Object(this);
-  if (arguments.length === 0) {
-    return O;
-  }
-  var iterators = Array(arguments.length + 1);
-  iterators[0] = O;
-  for (var i = 0; i < arguments.length; i++) {
-    var iterable = arguments[i];
-    if (IsConcatSpreadableIterable(iterable) === false) {
-      iterable = [iterable];
-    }
-    iterators[i + 1] = GetIterator(iterable);
-  }
-  return CreateConcatIterator(iterators);
+  var iterables = [O].concat(Array.prototype.slice.call(arguments));
+  return CreateConcatedIterator(iterables);
 });
 
 function IsConcatSpreadableIterable(O) {
@@ -112,58 +101,94 @@ function IsConcatSpreadableIterable(O) {
   return true;
 }
 
-function CreateConcatIterator(iterators) {
-  if (Object(iterators) !== iterators) {
-    throw new TypeError();
-  }
+function CreateConcatedIterator(iterables) {
   var iterator = ObjectCreate(
-    IteratorPrototype,
-    ['[[Iterators]]', '[[State]]']
+    ConcatedIteratorPrototype,
+    ['[[Iterables]]', '[[CreateIterator]]']
   );
-  iterator['[[Iterators]]'] = iterators;
-  iterator['[[State]]'] = 0;
-  CreateMethodProperty(iterator, 'next', ConcatIteratorNext);
-  if (IsSomeReturnable(iterators) === true) {
-    CreateMethodProperty(iterator, 'return', ConcatIteratorReturn);
-  }
+  iterator['[[Iterables]]'] = iterables;
+  iterator['[[CurrentIterator]]'] = undefined;
   return iterator;
 }
 
-function ConcatIteratorNext() {
+var ConcatedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(ConcatedIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
   var O = Object(this);
-  var iterators = O['[[Iterators]]'];
-  if (iterators === undefined) {
+  var iterables = O['[[Iterables]]'];
+  if (iterables === undefined) {
     return CreateIterResultObject(undefined, true);
   }
-  var state = O['[[State]]'];
+  var initialIterator = O['[[CurrentIterator]]'];
+  var iterator = initialIterator;
   while (true) {
-    var iterator = iterators[state];
-    var next = IteratorNext(iterator);
-    if (IteratorComplete(next) === false) {
-      return next;
+    if (iterator === undefined) {
+      if (iterables.length === 0) {
+        O['[[Iterables]]'] = undefined;
+        return CreateIterResultObject(undefined, true);
+      }
+      var E = iterables.shift();
+      var spreadable = IsConcatSpreadableIterable(E);
+      if (spreadable === false) {
+        return CreateIterResultObject(E, false);
+      }
+      iterator = GetIterator(E);
+      O['[[CurrentIterator]]'] = iterator;
     }
-    state = state + 1;
-    var len = iterators.length;
-    if (state === len) {
-      O['[[Iterators]]'] = undefined;
-      return next;
+    var next;
+    if (arguments.length > 0 && initialIterator === iterator) {
+      var value = arguments[0];
+      next = IteratorNext(iterator, value);
+    } else {
+      next = IteratorNext(iterator);
     }
-    O['[[State]]'] = state;
+    if (IteratorComplete(next) === true) {
+      iterator = undefined;
+      continue;
+    }
+    return next;
   }
-}
+});
 
-function ConcatIteratorReturn(value) {
+CreateMethodProperty(ConcatedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
-  var iterators = O['[[Iterators]]'];
-  if (iterators !== undefined) {
-    var state = O['[[State]]'];
-    for (var i = state; i < iterators.length; i++) {
-      var iterator = iterators[i];
-      IteratorClose(iterator, NormalCompletion());
-    }
+  var iterables = O['[[Iterables]]'];
+  if (iterables === undefined) {
+    return CreateIterResultObject(value, true);
   }
-  return CreateIterResultObject(value, true);
-}
+  var iterator = O['[[CurrentIterator]]'];
+  if (iterator === undefined) {
+    O['[[Iterables]]'] = undefined;
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    IteratorComplete(iterator, NormalCompletion());
+    O['[[Iterables]]'] = undefined;
+    return CreateIterResultObject(value, true);
+  }
+  return returnFn.call(iterator, value);
+});
+
+CreateMethodProperty(ConcatedIteratorPrototype, 'throw', function throw_( exception ) {
+  var O = Object(this);
+  var iterables = O['[[Iterables]]'];
+  if (iterables === undefined) {
+    throw exception;
+  }
+  var iterator = O['[[CurrentIterator]]'];
+  if (iterator === undefined) {
+    O['[[Iterables]]'] = undefined;
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    IteratorComplete(iterator, NormalCompletion());
+    O['[[Iterables]]'] = undefined;
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
+});
 
 /**
  * Returns true if the search-element in the iterated values.
