@@ -1,6 +1,6 @@
 "use strict";
 
-require('./es6');
+require('./es-abstract-operations');
 
 global.Iterator = function Iterator(iterable) {
   var iterator = GetIterator(iterable);
@@ -119,7 +119,7 @@ function IsConcatSpreadableIterable(O) {
   }
   var spreadable = O[Symbol.isConcatSpreadable];
   if (spreadable !== undefined) {
-    return ToBoolean(spreadable);
+    return Boolean(spreadable);
   }
   if (GetMethod(O, Symbol.iterator) === undefined) {
     return false;
@@ -215,7 +215,7 @@ CreateMethodProperty(IteratorPrototype, 'every', function IteratorPrototype_ever
       return true;
     }
     var value = IteratorValue(result);
-    var testResult = ToBoolean(callbackFn.call(T, value, index, O));
+    var testResult = Boolean(callbackFn.call(T, value, index, O));
     if (testResult === false) {
       IteratorClose(O, NormalCompletion());
       return false;
@@ -247,7 +247,7 @@ function FilterIteratorTransform(result, index, iterator) {
   var callbackFn = O['[[FilterFunction]]'];
   var T = O['[[FilterContext]]'];
   var value = IteratorValue(result);
-  if (ToBoolean(callbackFn.call(T, value, index, iterator)) === false) {
+  if (Boolean(callbackFn.call(T, value, index, iterator)) === false) {
     return undefined;
   }
   return result;
@@ -270,7 +270,7 @@ CreateMethodProperty(IteratorPrototype, 'find', function IteratorPrototype_find(
       return;
     }
     var value = IteratorValue(result);
-    if (ToBoolean(callbackFn.call(T, value, index, O)) === true) {
+    if (Boolean(callbackFn.call(T, value, index, O)) === true) {
       return value;
     }
     index += 1;
@@ -636,8 +636,8 @@ CreateMethodProperty(IteratorPrototype, 'some', function IteratorPrototype_some(
       return false;
     }
     var value = IteratorValue(result);
-    var testResult = ToBoolean(callbackFn.call(T, value, index, O));
-    if (testResult === true) {
+    var testResult = callbackFn.call(T, value, index, O);
+    if (Boolean(testResult) === true) {
       IteratorClose(O, NormalCompletion());
       return true;
     }
