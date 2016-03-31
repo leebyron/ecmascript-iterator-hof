@@ -487,18 +487,18 @@ function CreateFlattenIterator(originalIterator, depth) {
     throw new TypeError();
   }
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    FlattenedIteratorPrototype,
     ['[[Depth]]', '[[IteratorStack]]']
   );
   iterator['[[Depth]]'] = depth;
   iterator['[[IteratorStack]]'] = [ originalIterator ];
-  CreateMethodProperty(iterator, 'next', FlattenIteratorNext);
-  CreateMethodProperty(iterator, 'return', FlattenIteratorReturn);
-  CreateMethodProperty(iterator, 'throw', FlattenIteratorThrow);
   return iterator;
 }
 
-function FlattenIteratorNext() {
+var FlattenedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(FlattenedIteratorPrototype, 'next', function next() {
+  // TODO: support optional next value.
   var O = Object(this);
   var depth = O['[[Depth]]'];
   var stack = O['[[IteratorStack]]'];
@@ -520,9 +520,9 @@ function FlattenIteratorNext() {
     return result;
   }
   return CreateIterResultObject(undefined, true);
-}
+});
 
-function FlattenIteratorReturn(value) {
+CreateMethodProperty(FlattenedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var stack = O['[[IteratorStack]]'];
   while (stack.length !== 0) {
@@ -530,9 +530,9 @@ function FlattenIteratorReturn(value) {
     IteratorClose(iterator, NormalCompletion());
   }
   return CreateIterResultObject(value, true);
-}
+});
 
-function FlattenIteratorThrow(exception) {
+CreateMethodProperty(FlattenedIteratorPrototype, 'throw', function throw_( exception ) {
   var O = Object(this);
   var stack = O['[[IteratorStack]]'];
   while (stack.length !== 0) {
@@ -549,7 +549,7 @@ function FlattenIteratorThrow(exception) {
     }
   }
   throw exception;
-}
+});
 
 /**
  * Equivalent to a for-of loop. Does not return any value.
