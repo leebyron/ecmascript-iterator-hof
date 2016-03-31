@@ -161,3 +161,4 @@ node examples.js
  * Prototypes vs method assignments
  * Test and double check all return/throw methods for appropriate behavior
  * Test and double check throwing from generator functions performs correctly
+ * Can some of the `throw` and `return` impls be generalized?

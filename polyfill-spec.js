@@ -163,7 +163,7 @@ CreateMethodProperty(ConcatedIteratorPrototype, 'return', function return_( valu
   }
   var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
-    IteratorComplete(iterator, NormalCompletion());
+    IteratorClose(iterator, NormalCompletion());
     O['[[Iterables]]'] = undefined;
     return CreateIterResultObject(value, true);
   }
@@ -183,7 +183,7 @@ CreateMethodProperty(ConcatedIteratorPrototype, 'throw', function throw_( except
   }
   var throwFn = GetMethod(iterator, 'throw');
   if (IsCallable(throwFn) === false) {
-    IteratorComplete(iterator, NormalCompletion());
+    IteratorClose(iterator, NormalCompletion());
     O['[[Iterables]]'] = undefined;
     throw new TypeError();
   }
@@ -245,28 +245,24 @@ CreateMethodProperty(IteratorPrototype, 'filter', function filter( callbackFn /*
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
+  return CreateFilteredIterator(O, callbackFn, T);
+});
+
+function CreateFilteredIterator(O, callbackFn, T) {
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    FilteredIteratorPrototype,
     ['[[Iterator]]', '[[Callback]]', '[[ThisArg]]', '[[NextIndex]]']
   );
   iterator['[[Iterator]]'] = O;
   iterator['[[Callback]]'] = callbackFn;
   iterator['[[ThisArg]]'] = T;
   iterator['[[NextIndex]]'] = 0;
-
-  CreateMethodProperty(iterator, 'next', FilterIteratorNext);
-  var returnFn = O['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', FilterIteratorReturn);
-  }
-  var throwFn = O['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', FilterIteratorThrow);
-  }
   return iterator;
-});
+}
 
-function FilterIteratorNext( /*[ value ]*/ ) {
+var FilteredIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(FilteredIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -297,9 +293,9 @@ function FilterIteratorNext( /*[ value ]*/ ) {
       return result;
     }
   }
-}
+});
 
-function FilterIteratorReturn(value) {
+CreateMethodProperty(FilteredIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -307,12 +303,14 @@ function FilterIteratorReturn(value) {
   }
   var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
-    throw new TypeError();
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
+    return CreateIterResultObject(value, true);
   }
   return returnFn.call(iterator, value);
-}
+});
 
-function FilterIteratorThrow(exception) {
+CreateMethodProperty(FilteredIteratorPrototype, 'throw', function throw_( exception ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -320,10 +318,12 @@ function FilterIteratorThrow(exception) {
   }
   var throwFn = GetMethod(iterator, 'throw');
   if (IsCallable(throwFn) === false) {
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
     throw new TypeError();
   }
   return throwFn.call(iterator, exception);
-}
+});
 
 /**
  * Returns an if the search-element in the iterated values.
