@@ -594,28 +594,24 @@ CreateMethodProperty(IteratorPrototype, 'map', function map( callbackFn /*[ , th
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
+  return CreateMappedIterator(O, callbackFn, T);
+});
+
+function CreateMappedIterator(O, callbackFn, T) {
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    MappedIteratorPrototype,
     ['[[Iterator]]', '[[Callback]]', '[[ThisArg]]', '[[NextIndex]]']
   );
   iterator['[[Iterator]]'] = O;
   iterator['[[Callback]]'] = callbackFn;
   iterator['[[ThisArg]]'] = T;
   iterator['[[NextIndex]]'] = 0;
-
-  CreateMethodProperty(iterator, 'next', MapIteratorNext);
-  var returnFn = O['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', MapIteratorReturn);
-  }
-  var throwFn = O['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', MapIteratorThrow);
-  }
   return iterator;
-});
+}
 
-function MapIteratorNext( /*[ value ]*/ ) {
+var MappedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(MappedIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -643,9 +639,9 @@ function MapIteratorNext( /*[ value ]*/ ) {
   O['[[NextIndex]]'] = index + 1;
 
   return CreateIterResultObject(mappedValue, false);
-}
+});
 
-function MapIteratorReturn(value) {
+CreateMethodProperty(MappedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -653,12 +649,14 @@ function MapIteratorReturn(value) {
   }
   var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
-    throw new TypeError();
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
+    return CreateIterResultObject(value, true);
   }
   return returnFn.call(iterator, value);
-}
+});
 
-function MapIteratorThrow(exception) {
+CreateMethodProperty(MappedIteratorPrototype, 'throw', function throw_( exception ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -666,10 +664,12 @@ function MapIteratorThrow(exception) {
   }
   var throwFn = GetMethod(iterator, 'throw');
   if (IsCallable(throwFn) === false) {
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
     throw new TypeError();
   }
   return throwFn.call(iterator, exception);
-}
+});
 
 /**
  * Reduces this iterator with a reducing callbackFn to a single value.
