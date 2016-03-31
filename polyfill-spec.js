@@ -853,18 +853,18 @@ CreateMethodProperty(IteratorPrototype, 'tee', function tee( amount ) {
 
 function CreateTeeIterator(originalIterator, buffer, bufferHead) {
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    TeeIteratorPrototype,
     ['[[Iterator]]', '[[Buffer]]', '[[BufferHead]]']
   );
   iterator['[[Iterator]]'] = originalIterator;
   iterator['[[Buffer]]'] = buffer;
   iterator['[[BufferHead]]'] = bufferHead;
-  CreateMethodProperty(iterator, 'next', TeeIteratorNext);
-  CreateMethodProperty(iterator, 'return', TeeIteratorReturn);
   return iterator;
 }
 
-function TeeIteratorNext() {
+var TeeIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(TeeIteratorPrototype, 'next', function next() {
   var O = Object(this);
   var buffer = O['[[Buffer]]'];
   if (buffer === undefined) {
@@ -894,9 +894,9 @@ function TeeIteratorNext() {
     O['[[BufferHead]]'] = undefined;
   }
   return result;
-}
+});
 
-function TeeIteratorReturn(value) {
+CreateMethodProperty(TeeIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var buffer = O['[[Buffer]]'];
   if (buffer !== undefined) {
@@ -911,7 +911,7 @@ function TeeIteratorReturn(value) {
     O['[[BufferHead]]'] = undefined;
   }
   return CreateIterResultObject(value, true);
-}
+});
 
 /**
  * "zips" other iterables with this iterator, returning a new iterator which
