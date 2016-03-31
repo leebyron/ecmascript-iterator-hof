@@ -722,29 +722,24 @@ CreateMethodProperty(IteratorPrototype, 'slice', function slice( start, end ) {
       throw new TypeError('Slice end must not be negative.');
     }
   }
+  return CreateSlicedIterator(O, start, end);
+});
 
+function CreateSlicedIterator(O, start, end) {
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    SlicedIteratorPrototype,
     ['[[Iterator]]', '[[Start]]', '[[End]]', '[[NextIndex]]']
   );
   iterator['[[Iterator]]'] = O;
   iterator['[[Start]]'] = start;
   iterator['[[End]]'] = end;
   iterator['[[NextIndex]]'] = 0;
-
-  CreateMethodProperty(iterator, 'next', SliceIteratorNext);
-  var returnFn = O['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', SliceIteratorReturn);
-  }
-  var throwFn = O['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', SliceIteratorThrow);
-  }
   return iterator;
-});
+}
 
-function SliceIteratorNext( /*[ value ]*/ ) {
+var SlicedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(SlicedIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -781,9 +776,9 @@ function SliceIteratorNext( /*[ value ]*/ ) {
       return result;
     }
   }
-}
+});
 
-function SliceIteratorReturn(value) {
+CreateMethodProperty(SlicedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -791,12 +786,14 @@ function SliceIteratorReturn(value) {
   }
   var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
-    throw new TypeError();
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
+    return CreateIterResultObject(value, true);
   }
   return returnFn.call(iterator, value);
-}
+});
 
-function SliceIteratorThrow(exception) {
+CreateMethodProperty(SlicedIteratorPrototype, 'throw', function throw_( exception ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
@@ -804,10 +801,12 @@ function SliceIteratorThrow(exception) {
   }
   var throwFn = GetMethod(iterator, 'throw');
   if (IsCallable(throwFn) === false) {
+    IteratorClose(iterator, NormalCompletion());
+    O['[[Iterator]]'] = undefined;
     throw new TypeError();
   }
   return throwFn.call(iterator, exception);
-}
+});
 
 /**
  * Returns true if any item in the list passes the predicate.
