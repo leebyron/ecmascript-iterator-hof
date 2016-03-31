@@ -24,30 +24,30 @@ Object.defineProperty(Iterator, 'prototype', {
   configurable: false
 });
 
-function CreateAdaptedIterator(originalIterator) {
-  if (Object(originalIterator) !== originalIterator) {
+function CreateAdaptedIterator(iterator) {
+  if (Object(iterator) !== iterator) {
     throw new TypeError();
   }
-  var iterator = ObjectCreate(
+  var adaptedIterator = ObjectCreate(
     IteratorPrototype,
-    ['[[OriginalIterator]]']
+    ['[[Iterator]]']
   );
-  iterator['[[OriginalIterator]]'] = originalIterator;
-  CreateMethodProperty(iterator, 'next', AdaptedIteratorNext);
-  var returnFn = originalIterator['return'];
+  adaptedIterator['[[Iterator]]'] = iterator;
+  CreateMethodProperty(adaptedIterator, 'next', AdaptedIteratorNext);
+  var returnFn = iterator['return'];
   if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(iterator, 'return', AdaptedIteratorReturn);
+    CreateMethodProperty(adaptedIterator, 'return', AdaptedIteratorReturn);
   }
-  var throwFn = originalIterator['throw'];
+  var throwFn = iterator['throw'];
   if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(iterator, 'throw', AdaptedIteratorThrow);
+    CreateMethodProperty(adaptedIterator, 'throw', AdaptedIteratorThrow);
   }
-  return iterator;
+  return adaptedIterator;
 }
 
 function AdaptedIteratorNext(/*[ value ]*/) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(undefined, true);
   }
@@ -61,7 +61,7 @@ function AdaptedIteratorNext(/*[ value ]*/) {
 
 function AdaptedIteratorReturn(value) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(value, true);
   }
@@ -74,7 +74,7 @@ function AdaptedIteratorReturn(value) {
 
 function AdaptedIteratorThrow(exception) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     throw exception;
   }
@@ -297,9 +297,9 @@ function CreateFlatMappedIterator(originalIterator, transformer, context) {
   }
   var iterator = ObjectCreate(
     IteratorPrototype,
-    ['[[OriginalIterator]]', '[[FlatMapFunction]]', '[[FlatMapContext]]', '[[FlatMapIndex]]', '[[FlatMapIterator]]']
+    ['[[Iterator]]', '[[FlatMapFunction]]', '[[FlatMapContext]]', '[[FlatMapIndex]]', '[[FlatMapIterator]]']
   );
-  iterator['[[OriginalIterator]]'] = originalIterator;
+  iterator['[[Iterator]]'] = originalIterator;
   iterator['[[FlatMapFunction]]'] = transformer;
   iterator['[[FlatMapContext]]'] = context;
   iterator['[[FlatMapIndex]]'] = 0;
@@ -319,7 +319,7 @@ function CreateFlatMappedIterator(originalIterator, transformer, context) {
 
 function FlatMappedIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(undefined, true);
   }
@@ -329,7 +329,7 @@ function FlatMappedIteratorNext( /*[ value ]*/ ) {
     if (!flatMapIterator) {
       var result = IteratorNext(iterator);
       if (IteratorComplete(result) === true) {
-        O['[[OriginalIterator]]'] = undefined;
+        O['[[Iterator]]'] = undefined;
         O['[[FlatMapFunction]]'] = undefined;
         O['[[FlatMapContext]]'] = undefined;
         O['[[FlatMapIndex]]'] = undefined;
@@ -364,7 +364,7 @@ function FlatMappedIteratorNext( /*[ value ]*/ ) {
 
 function FlatMappedIteratorReturn(value) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(value, true);
   }
@@ -381,7 +381,7 @@ function FlatMappedIteratorReturn(value) {
 
 function FlatMappedIteratorThrow(exception) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     throw exception;
   }
@@ -665,9 +665,9 @@ CreateMethodProperty(IteratorPrototype, 'tee', function IteratorPrototype_tee( a
 function CreateTeeIterator(originalIterator, buffer, bufferHead) {
   var iterator = ObjectCreate(
     IteratorPrototype,
-    ['[[OriginalIterator]]', '[[Buffer]]', '[[BufferHead]]']
+    ['[[Iterator]]', '[[Buffer]]', '[[BufferHead]]']
   );
-  iterator['[[OriginalIterator]]'] = originalIterator;
+  iterator['[[Iterator]]'] = originalIterator;
   iterator['[[Buffer]]'] = buffer;
   iterator['[[BufferHead]]'] = bufferHead;
   CreateMethodProperty(iterator, 'next', TeeIteratorNext);
@@ -690,7 +690,7 @@ function TeeIteratorNext() {
     if (bufferHead !== bufferTail) {
       throw new TypeError();
     }
-    var iterator = O['[[OriginalIterator]]'];
+    var iterator = O['[[Iterator]]'];
     result = IteratorNext(iterator);
     bufferHead['[[Value]]'] = result;
     var bufferTail = { '[[Value]]': undefined, '[[Next]]': undefined };
@@ -700,7 +700,7 @@ function TeeIteratorNext() {
   }
   if (IteratorComplete(result) === true) {
     buffer['[[Count]]'] = buffer['[[Count]]'] - 1;
-    O['[[OriginalIterator]]'] = undefined;
+    O['[[Iterator]]'] = undefined;
     O['[[Buffer]]'] = undefined;
     O['[[BufferHead]]'] = undefined;
   }
@@ -713,11 +713,11 @@ function TeeIteratorReturn(value) {
   if (buffer !== undefined) {
     var count = buffer['[[Count]]'];
     if (count === 1) {
-      var iterator = O['[[OriginalIterator]]'];
+      var iterator = O['[[Iterator]]'];
       IteratorClose(iterator); // TODO note why no completion record?
     }
     buffer['[[Count]]'] = count - 1;
-    O['[[OriginalIterator]]'] = undefined;
+    O['[[Iterator]]'] = undefined;
     O['[[Buffer]]'] = undefined;
     O['[[BufferHead]]'] = undefined;
   }
@@ -754,9 +754,9 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
   }
   var iterator = ObjectCreate(
     IteratorPrototype,
-    ['[[OriginalIterator]]', '[[TransformFunction]]', '[[TransformContext]]', '[[TransformIndex]]']
+    ['[[Iterator]]', '[[TransformFunction]]', '[[TransformContext]]', '[[TransformIndex]]']
   );
-  iterator['[[OriginalIterator]]'] = originalIterator;
+  iterator['[[Iterator]]'] = originalIterator;
   iterator['[[TransformFunction]]'] = transformer;
   iterator['[[TransformContext]]'] = context;
   iterator['[[TransformIndex]]'] = 0;
@@ -775,7 +775,7 @@ function CreateTransformedIterator(originalIterator, transformer, context) {
 
 function TransformedIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(undefined, true);
   }
@@ -790,7 +790,7 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
   }
   while (true) {
     if (IteratorComplete(result) === true) {
-      O['[[OriginalIterator]]'] = undefined;
+      O['[[Iterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
       O['[[TransformIndex]]'] = undefined;
@@ -807,7 +807,7 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
       throw new TypeError();
     }
     if (IteratorComplete(result) === true) {
-      O['[[OriginalIterator]]'] = undefined;
+      O['[[Iterator]]'] = undefined;
       O['[[TransformFunction]]'] = undefined;
       O['[[TransformContext]]'] = undefined;
       O['[[TransformIndex]]'] = undefined;
@@ -819,7 +819,7 @@ function TransformedIteratorNext( /*[ value ]*/ ) {
 
 function TransformedIteratorReturn(value) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     return CreateIterResultObject(value, true);
   }
@@ -832,7 +832,7 @@ function TransformedIteratorReturn(value) {
 
 function TransformedIteratorThrow(exception) {
   var O = Object(this);
-  var iterator = O['[[OriginalIterator]]'];
+  var iterator = O['[[Iterator]]'];
   if (iterator === undefined) {
     throw exception;
   }
