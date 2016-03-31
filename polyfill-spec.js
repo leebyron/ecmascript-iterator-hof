@@ -519,8 +519,8 @@ CreateMethodProperty(IteratorPrototype, 'forEach', function IteratorPrototype_fo
 });
 
 /**
- * A specific `transform` which uses a mapper callbackFn to map from original
- * values to new values. Returns a new iterator. Consumes this iterator.
+ * Uses a mapper callbackFn to map from original values to new values.
+ * Returns a new iterator. Consumes this iterator.
  */
 CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( callbackFn /*[ , thisArg ]*/ ) {
   var O = Object(this);
@@ -528,20 +528,81 @@ CreateMethodProperty(IteratorPrototype, 'map', function IteratorPrototype_map( c
     throw new TypeError();
   }
   var T = arguments.length > 1 ? arguments[1] : undefined;
-  var context = {
-    '[[MapFunction]]': callbackFn,
-    '[[MapContext]]': T
-  };
-  return CreateTransformedIterator(O, MapIteratorTransform, context);
+  var iterator = ObjectCreate(
+    IteratorPrototype,
+    ['[[Iterator]]', '[[Callback]]', '[[ThisArg]]', '[[NextIndex]]']
+  );
+  iterator['[[Iterator]]'] = O;
+  iterator['[[Callback]]'] = callbackFn;
+  iterator['[[ThisArg]]'] = T;
+  iterator['[[NextIndex]]'] = 0;
+
+  CreateMethodProperty(iterator, 'next', MapIteratorNext);
+  var returnFn = O['return'];
+  if (IsCallable(returnFn) === true) {
+    CreateMethodProperty(iterator, 'return', MapIteratorReturn);
+  }
+  var throwFn = O['throw'];
+  if (IsCallable(throwFn) === true) {
+    CreateMethodProperty(iterator, 'throw', MapIteratorThrow);
+  }
+  return iterator;
 });
 
-function MapIteratorTransform(result, index, iterator) {
+function MapIteratorNext( /*[ value ]*/ ) {
   var O = Object(this);
-  var callbackFn = O['[[MapFunction]]'];
-  var T = O['[[MapContext]]'];
-  var value = IteratorValue(result);
-  var mappedValue = callbackFn.call(T, value, index, iterator);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+  var callbackFn = O['[[Callback]]'];
+  var T = O['[[ThisArg]]'];
+  var result;
+  if (arguments.length > 0) {
+    var value = arguments[0];
+    result = IteratorNext(iterator, value);
+  } else {
+    result = IteratorNext(iterator);
+  }
+  if (IteratorComplete(result) === true) {
+    O['[[Iterator]]'] = undefined;
+    O['[[Callback]]'] = undefined;
+    O['[[ThisArg]]'] = undefined;
+    O['[[NextIndex]]'] = undefined;
+    return result;
+  }
+  var iterValue = IteratorValue(result);
+  var index = O['[[NextIndex]]'];
+  var mappedValue = callbackFn.call(T, iterValue, index, iterator);
+  O['[[NextIndex]]'] = index + 1;
+
   return CreateIterResultObject(mappedValue, false);
+}
+
+function MapIteratorReturn(value) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    throw new TypeError();
+  }
+  return returnFn.call(iterator, value);
+}
+
+function MapIteratorThrow(exception) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    throw exception;
+  }
+  var throwFn = GetMethod(iterator, 'throw');
+  if (IsCallable(throwFn) === false) {
+    throw new TypeError();
+  }
+  return throwFn.call(iterator, exception);
 }
 
 /**
