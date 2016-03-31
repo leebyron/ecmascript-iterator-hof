@@ -29,61 +29,46 @@ function CreateAdaptedIterator(iterator) {
     throw new TypeError();
   }
   var adaptedIterator = ObjectCreate(
-    IteratorPrototype,
+    AdaptedIteratorPrototype,
     ['[[Iterator]]']
   );
   adaptedIterator['[[Iterator]]'] = iterator;
-  CreateMethodProperty(adaptedIterator, 'next', AdaptedIteratorNext);
-  var returnFn = iterator['return'];
-  if (IsCallable(returnFn) === true) {
-    CreateMethodProperty(adaptedIterator, 'return', AdaptedIteratorReturn);
-  }
-  var throwFn = iterator['throw'];
-  if (IsCallable(throwFn) === true) {
-    CreateMethodProperty(adaptedIterator, 'throw', AdaptedIteratorThrow);
-  }
   return adaptedIterator;
 }
 
-function AdaptedIteratorNext(/*[ value ]*/) {
+var AdaptedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(AdaptedIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    return CreateIterResultObject(undefined, true);
-  }
   if (arguments.length > 0) {
     var value = arguments[0];
     return IteratorNext(iterator, value);
   } else {
     return IteratorNext(iterator);
   }
-}
+});
 
-function AdaptedIteratorReturn(value) {
+CreateMethodProperty(AdaptedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    return CreateIterResultObject(value, true);
-  }
   var returnFn = GetMethod(iterator, 'return');
   if (IsCallable(returnFn) === false) {
-    throw new TypeError();
+    return CreateIterResultObject(value, true);
   }
   return returnFn.call(iterator, value);
-}
+});
 
-function AdaptedIteratorThrow(exception) {
+CreateMethodProperty(AdaptedIteratorPrototype, 'throw', function throw_( exception ) {
   var O = Object(this);
   var iterator = O['[[Iterator]]'];
-  if (iterator === undefined) {
-    throw exception;
-  }
   var throwFn = GetMethod(iterator, 'throw');
   if (IsCallable(throwFn) === false) {
+    IteratorClose(iterator, NormalCompletion());
     throw new TypeError();
   }
   return throwFn.call(iterator, exception);
-}
+});
 
 function IsSomeReturnable(iterators) {
   for (var i = 0; i < iterators.length; i++) {
