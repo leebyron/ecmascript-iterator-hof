@@ -70,17 +70,6 @@ CreateMethodProperty(AdaptedIteratorPrototype, 'throw', function throw_( excepti
   return throwFn.call(iterator, exception);
 });
 
-function IsSomeReturnable(iterators) {
-  for (var i = 0; i < iterators.length; i++) {
-    var iterator = iterators[i];
-    var usingReturn = GetMethod(iterator, 'return');
-    if (usingReturn !== undefined) {
-      return true;
-    }
-  }
-  return false;
-}
-
 CreateMethodProperty(IteratorPrototype, 'concat', function concat( /* ...iterables */ ) {
   var O = Object(this);
   var iterables = [O].concat(Array.prototype.slice.call(arguments));
@@ -934,18 +923,16 @@ function CreateZipIterator(iterators) {
     throw new TypeError();
   }
   var iterator = ObjectCreate(
-    IteratorPrototype,
+    ZippedIteratorPrototype,
     ['[[Iterators]]']
   );
   iterator['[[Iterators]]'] = iterators;
-  CreateMethodProperty(iterator, 'next', ZipIteratorNext);
-  if (IsSomeReturnable(iterators) === true) {
-    CreateMethodProperty(iterator, 'return', ZipIteratorReturn);
-  }
   return iterator;
 }
 
-function ZipIteratorNext() {
+var ZippedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(ZippedIteratorPrototype, 'next', function next() {
   var O = Object(this);
   var iterators = O['[[Iterators]]'];
   if (iterators === undefined) {
@@ -967,9 +954,9 @@ function ZipIteratorNext() {
     zippedValues[i] = IteratorValue(result);
   }
   return CreateIterResultObject(zippedValues, false);
-}
+});
 
-function ZipIteratorReturn(value) {
+CreateMethodProperty(ZippedIteratorPrototype, 'return', function return_( value ) {
   var O = Object(this);
   var iterators = O['[[Iterators]]'];
   if (iterators !== undefined) {
@@ -979,4 +966,4 @@ function ZipIteratorReturn(value) {
     }
   }
   return CreateIterResultObject(value, true);
-}
+});
