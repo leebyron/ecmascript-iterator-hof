@@ -22,7 +22,7 @@ myIter.next() // { value: 1, done: false }
 
 This provides a nicer alternative to `myArray[Symbol.iterator]()` for accessing
 the default iterator for any iterable collection (including Map and Set),
-provides a clearer way to access *%IteratorPrototype%*, and via the adaptor
+provides a clearer way to access *%IteratorPrototype%* (via `Iterator.prototype`), and via the adaptor
 pattern ensures the returned result has *%IteratorPrototype%* in its prototype
 chain.
 
