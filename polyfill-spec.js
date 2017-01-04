@@ -449,6 +449,29 @@ CreateMethodProperty(IteratorPrototype, 'forEach', function forEach( callbackFn 
 });
 
 /**
+ * Equivalent to [...iter].join(). Returns a string.
+ */
+CreateMethodProperty(IteratorPrototype, 'join', function join( /*[ separator ]*/ ) {
+  var O = Object(this);
+  var separator = arguments.length > 0 ? String(arguments[0]) : ',';
+  var R = '';
+  var needsSeparator = false;
+  while (true) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return R;
+    }
+    if (needsSeparator) {
+      R = R + separator;
+    } else {
+      needsSeparator = true;
+    }
+    var value = IteratorValue(result);
+    R = R + (value == null ? '' : String(value));
+  }
+});
+
+/**
  * Uses a mapper callbackFn to map from original values to new values.
  * Returns a new iterator. Consumes this iterator.
  */

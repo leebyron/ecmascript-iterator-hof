@@ -135,6 +135,18 @@ test('Values can be found in an iterator', () => {
   ]);
 });
 
+test('Iterators can be joined', () => {
+  var items = ['A', 'B', 'C'];
+  assert.equal(items.values().join(), 'A,B,C');
+  assert.equal(items.values().join(''), 'ABC');
+  assert.equal(items.values().join('--'), 'A--B--C');
+})
+
+test('Iterator join does not print null and undefined values', () => {
+  var items = ['A', null, 'B', undefined, 'C', undefined];
+  assert.equal(items.values().join(), 'A,,B,,C,');
+})
+
 test('Iterators can be zipped', () => {
   var a1 = ['A', 'B', 'C'];
   var a2 = ['X', 'Y', 'Z'];

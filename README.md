@@ -39,6 +39,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **find**
  * **flatten**
  * **forEach**
+ * **join**
  * **map**
  * **reduce**
  * **scan**
@@ -52,7 +53,6 @@ TODO:
  * indexOf?
  * findIndex?
  * splice?
- * join?
 
 
 These should mostly look familiar, they're almost all borrowed from the ES5
