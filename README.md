@@ -79,6 +79,13 @@ Where `value` is (usually) the `value` key of the iterator's next result object,
 called on the iterator, and `iterator` is the iterator being operated over (and
 not the collection from which it was created).
 
+
+#### Completion values
+
+Some iterators return "completion values", these are not affected by the
+higher-order-functions.
+
+
 ## Methods on Array.prototype not added to Iterator.prototype
 
 Array's mutative methods (push, pop, shift, unshift, sort) do not make sense in
@@ -145,7 +152,6 @@ node examples.js
 ## Open Questions
 
  * What sort of cleanup is necessary if a HOF throws?
- * Should transforms operate on "completion value"?
  * Prototypes vs method assignments
  * Test and double check all return/throw methods for appropriate behavior
  * Test and double check throwing from generator functions performs correctly
