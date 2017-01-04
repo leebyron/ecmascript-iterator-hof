@@ -315,7 +315,7 @@ CreateMethodProperty(FilteredIteratorPrototype, 'throw', function throw_( except
 });
 
 /**
- * Returns an if the search-element in the iterated values.
+ * Returns the first value which causes callbackFn to return true.
  * Consumes the iterable.
  */
 CreateMethodProperty(IteratorPrototype, 'find', function find( callbackFn /*[ , thisArg ]*/ ) {
@@ -333,6 +333,30 @@ CreateMethodProperty(IteratorPrototype, 'find', function find( callbackFn /*[ , 
     var value = IteratorValue(result);
     if (Boolean(callbackFn.call(T, value, index, O)) === true) {
       return value;
+    }
+    index += 1;
+  }
+});
+
+/**
+ * Returns the index of the first value which causes callbackFn to return true.
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'findIndex', function findIndex( callbackFn /*[ , thisArg ]*/ ) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var index = 0;
+  while (true) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return -1;
+    }
+    var value = IteratorValue(result);
+    if (Boolean(callbackFn.call(T, value, index, O)) === true) {
+      return index;
     }
     index += 1;
   }
@@ -444,6 +468,27 @@ CreateMethodProperty(IteratorPrototype, 'forEach', function forEach( callbackFn 
     }
     var value = IteratorValue(result);
     callbackFn.call(T, value, index, O);
+    index += 1;
+  }
+});
+
+/**
+ * Return the position in the iterable where the provided value exists.
+ * Note: does not include "fromIndex" like Array.prototype.indexOf
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'indexOf', function indexOf( searchElement ) {
+  var O = Object(this);
+  var index = 0;
+  while (true) {
+    var result = IteratorNext(O);
+    if (IteratorComplete(result) === true) {
+      return -1;
+    }
+    var value = IteratorValue(result);
+    if (searchElement === value) {
+      return index;
+    }
     index += 1;
   }
 });

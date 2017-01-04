@@ -135,6 +135,71 @@ test('Values can be found in an iterator', () => {
   ]);
 });
 
+test('find returns undefined when no match can be found in an iterator', () => {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['Apple', 'Banana', 'Cherry', 'Durian'].values();
+  var findFn = createSpy(function (x, index) {
+    return x.indexOf('iwi') !== -1;
+  });
+
+  var found = iter.find(findFn, someThis);
+
+  assert.equal(found, undefined);
+
+  assert.deepStrictEqual(findFn.calls, [
+    [ someThis, [ 'Apple', 0, iter ], false ],
+    [ someThis, [ 'Banana', 1, iter ], false ],
+    [ someThis, [ 'Cherry', 2, iter ], false ],
+    [ someThis, [ 'Durian', 3, iter ], false ],
+  ]);
+});
+
+test('Values indicies can be found in an iterator', () => {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['Apple', 'Banana', 'Cherry', 'Durian'].values();
+  var findFn = createSpy(function (x, index) {
+    return x.indexOf('na') !== -1;
+  });
+
+  var found = iter.findIndex(findFn, someThis);
+
+  assert.equal(found, 1);
+
+  assert.deepStrictEqual(findFn.calls, [
+    [ someThis, [ 'Apple', 0, iter ], false ],
+    [ someThis, [ 'Banana', 1, iter ], true ],
+  ]);
+});
+
+test('findIndex returns -1 when no match can be found in an iterator', () => {
+  var someThis = { someThis: 'someThis' };
+  var iter = ['Apple', 'Banana', 'Cherry', 'Durian'].values();
+  var findFn = createSpy(function (x, index) {
+    return x.indexOf('iwi') !== -1;
+  });
+
+  var found = iter.findIndex(findFn, someThis);
+
+  assert.equal(found, -1);
+
+  assert.deepStrictEqual(findFn.calls, [
+    [ someThis, [ 'Apple', 0, iter ], false ],
+    [ someThis, [ 'Banana', 1, iter ], false ],
+    [ someThis, [ 'Cherry', 2, iter ], false ],
+    [ someThis, [ 'Durian', 3, iter ], false ],
+  ]);
+});
+
+test('indexOf finds values in an iterator', () => {
+  var iter = ['Apple', 'Banana', 'Cherry', 'Banana'].values();
+  assert.equal(iter.indexOf('Banana'), 1);
+});
+
+test('indexOf returns -1 when value not in an iterator', () => {
+  var iter = ['Apple', 'Banana', 'Cherry', 'Banana'].values();
+  assert.equal(iter.indexOf('Kiwi'), -1);
+});
+
 test('Iterators can be joined', () => {
   var items = ['A', 'B', 'C'];
   assert.equal(items.values().join(), 'A,B,C');
