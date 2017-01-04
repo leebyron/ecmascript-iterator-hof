@@ -42,6 +42,7 @@ This proposal suggests adding the following methods to *%IteratorPrototype%*:
  * **forEach**
  * **map**
  * **reduce**
+ * **scan**
  * **slice**
  * **some**
  * **tee**
@@ -125,6 +126,12 @@ var flat3 = veryDeep.values().flatten(3) // [ 'A', 'B', 'C', [ 'D' ] ]
 `iterator.flatten()`, like `iterator.concat()`, only expands those values which
 are *Spreadable*. This is determined very similarly to [`IsConcatSpreadable`](https://tc39.github.io/ecma262/#sec-isconcatspreadable), however the last step determines if the value is *Iterable*
 rather than *Array*.
+
+#### scan
+
+This method returns a new Iterator resulting from calling the provided function
+for each value in the Iterator, using the result of the previous function as an
+argument in the subsequent call, much like "reduce".
 
 #### tee
 

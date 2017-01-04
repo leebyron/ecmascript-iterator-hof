@@ -172,6 +172,35 @@ test('Iterators can be reduced with initial value', () => {
   ]);
 });
 
+test('Iterators can be scanned', () => {
+  var reducer = createSpy(function(x, y) {
+    return x + y;
+  });
+  var iter = ['A', 'B', 'C'].values();
+  var scanned = iter.scan(reducer);
+
+  assertValues(scanned, [ 'A', 'AB', 'ABC' ]);
+  assert.deepStrictEqual(reducer.calls, [
+    [ undefined, [ 'A', 'B', 1, iter ], 'AB' ],
+    [ undefined, [ 'AB', 'C', 2, iter ], 'ABC' ]
+  ]);
+});
+
+test('Iterators can be scanned with initial value', () => {
+  var reducer = createSpy(function(x, y) {
+    return x + y;
+  });
+  var iter = ['A', 'B', 'C'].values();
+  var scanned = iter.scan(reducer, '~');
+
+  assertValues(scanned, [ '~', '~A', '~AB', '~ABC' ]);
+  assert.deepStrictEqual(reducer.calls, [
+    [ undefined, [ '~', 'A', 0, iter ], '~A' ],
+    [ undefined, [ '~A', 'B', 1, iter ], '~AB' ],
+    [ undefined, [ '~AB', 'C', 2, iter ], '~ABC' ]
+  ]);
+});
+
 test('Iterators can be use some', () => {
   var someThis = { someThis: 'someThis' };
   var pred1 = createSpy(function(x) {

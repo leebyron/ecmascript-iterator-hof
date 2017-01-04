@@ -823,6 +823,107 @@ CreateMethodProperty(IteratorPrototype, 'some', function some( callbackFn /*[ , 
   }
 });
 
+/**
+ * Returns a new Iterator of the results from calling the provided function
+ * for each value in the Iterator, using the result of the previous function as
+ * an argument in the subsequent call, much like "reduce".
+ * Consumes the iterable.
+ */
+CreateMethodProperty(IteratorPrototype, 'scan', function scan( callbackFn /*[ , initialValue ]*/ ) {
+  var O = Object(this);
+  if (IsCallable(callbackFn) === false) {
+    throw new TypeError();
+  }
+
+  if (arguments.length > 1) {
+    var accumulator = arguments[1];
+    return CreateScannedIterator(O, callbackFn, accumulator);
+  } else {
+    return CreateScannedIterator(O, callbackFn);
+  }
+});
+
+function CreateScannedIterator(O, callbackFn, accumulator) {
+  var iterator = ObjectCreate(
+    ScannedIteratorPrototype,
+    ['[[Iterator]]', '[[Callback]]', '[[NextIndex]]', '[[Accumulator]]', '[[HasAccumulator]]']
+  );
+  iterator['[[Iterator]]'] = O;
+  iterator['[[Callback]]'] = callbackFn;
+  iterator['[[NextIndex]]'] = arguments.length === 3 ? -1 : 0;
+  iterator['[[Accumulator]]'] = accumulator;
+  iterator['[[HasAccumulator]]'] = arguments.length === 3;
+  return iterator;
+}
+
+var ScannedIteratorPrototype = Object.create(IteratorPrototype);
+
+CreateMethodProperty(ScannedIteratorPrototype, 'next', function next( /*[ value ]*/ ) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(undefined, true);
+  }
+
+  var index = O['[[NextIndex]]'];
+  var accumulator = O['[[Accumulator]]'];
+  var hasAccumulator = O['[[HasAccumulator]]'];
+
+  if (index >= 0) {
+    var result;
+    if (arguments.length > 0) {
+      var value = arguments[0];
+      result = IteratorNext(iterator, value);
+    } else {
+      result = IteratorNext(iterator);
+    }
+    if (IteratorComplete(result) === true) {
+      O['[[Iterator]]'] = undefined;
+      O['[[Callback]]'] = undefined;
+      O['[[NextIndex]]'] = undefined;
+      O['[[Accumulator]]'] = undefined;
+      O['[[HasAccumulator]]'] = undefined;
+      return result;
+    }
+    var iterValue = IteratorValue(result);
+
+    if (hasAccumulator) {
+      var callbackFn = O['[[Callback]]'];
+      accumulator = callbackFn(accumulator, iterValue, index, iterator);
+    } else {
+      accumulator = iterValue;
+      O['[[HasAccumulator]]'] = true;
+    }
+    O['[[Accumulator]]'] = accumulator;
+  }
+
+  O['[[NextIndex]]'] = index + 1;
+  return CreateIterResultObject(accumulator, false);
+});
+
+CreateMethodProperty(ScannedIteratorPrototype, 'return', function return_( value ) {
+  var O = Object(this);
+  var iterator = O['[[Iterator]]'];
+  if (iterator === undefined) {
+    return CreateIterResultObject(value, true);
+  }
+  O['[[Iterator]]'] = undefined;
+  O['[[Callback]]'] = undefined;
+  O['[[NextIndex]]'] = undefined;
+  O['[[Accumulator]]'] = undefined;
+  O['[[HasAccumulator]]'] = undefined;
+  var returnFn = GetMethod(iterator, 'return');
+  if (IsCallable(returnFn) === false) {
+    IteratorClose(iterator, NormalCompletion());
+    return CreateIterResultObject(value, true);
+  }
+  return returnFn.call(iterator, value);
+});
+
+
+/**
+ * Splits an iterator into multiple iterators.
+ */
 CreateMethodProperty(IteratorPrototype, 'tee', function tee( amount ) {
   var O = Object(this);
   if (amount === undefined) {
